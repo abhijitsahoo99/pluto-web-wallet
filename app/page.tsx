@@ -2,7 +2,7 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import Navbar from "./components/Navbar";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import WalletDashboard from "./components/WalletDashboard";
 
 export default function Home() {
@@ -13,27 +13,29 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(sendAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-  };
+  }, [sendAddress]);
 
-  // Get Solana wallet address from Privy user
-  const solanaWallet = user?.linkedAccounts?.find(
-    (account) =>
-      account.type === "wallet" &&
-      account.walletClientType === "privy" &&
-      account.chainType === "solana"
-  );
-  const walletAddress = (solanaWallet as any)?.address || "";
+  // Optimize wallet address computation with memoization
+  const walletAddress = useMemo(() => {
+    if (!user?.linkedAccounts) return "";
 
-  // Debug logging
-  console.log("🔍 Debug Info:");
-  console.log("User object:", user);
-  console.log("Linked accounts:", user?.linkedAccounts);
-  console.log("Found Solana wallet:", solanaWallet);
-  console.log("Wallet address:", walletAddress);
+    const solanaWallet = user.linkedAccounts.find(
+      (account) =>
+        account.type === "wallet" &&
+        account.walletClientType === "privy" &&
+        account.chainType === "solana"
+    );
+
+    return (solanaWallet as any)?.address || "";
+  }, [user?.linkedAccounts]);
+
+  // Memoize sidebar handlers
+  const handleSidebarOpen = useCallback(() => setSidebarOpen(true), []);
+  const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
 
   // Show loading state while Privy is initializing
   if (!ready) {
@@ -154,7 +156,7 @@ export default function Home() {
         {/* Wallet Icon (left) */}
         <button
           className="w-10 h-10 bg-gradient-to-r from-[#35C2E2] to-[#4F84F5] rounded-full flex items-center justify-center"
-          onClick={() => setSidebarOpen(true)}
+          onClick={handleSidebarOpen}
           aria-label="Open wallet sidebar"
         >
           <span className="text-white font-bold text-lg">W</span>
@@ -187,21 +189,18 @@ export default function Home() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="w-64 bg-black/80 backdrop-blur-lg p-6">
-            <button
-              className="mb-4 text-white"
-              onClick={() => setSidebarOpen(false)}
-            >
+            <button className="mb-4 text-white" onClick={handleSidebarClose}>
               Close
             </button>
             {/* Sidebar content goes here */}
             <div className="text-white">Sidebar (to be updated)</div>
           </div>
-          <div className="flex-1" onClick={() => setSidebarOpen(false)} />
+          <div className="flex-1" onClick={handleSidebarClose} />
         </div>
       )}
 
       {/* Main dashboard content */}
-      <main className="pt-20 px-4 max-w-xl mx-auto w-full">
+      <main className="pt-20 px-0 max-w-sm mx-auto w-full">
         <WalletDashboard walletAddress={walletAddress} />
       </main>
     </div>

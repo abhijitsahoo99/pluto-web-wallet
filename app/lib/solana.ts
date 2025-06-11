@@ -113,18 +113,12 @@ export async function batchGetTokenMetadata(
       return cachedResults;
     }
 
-    // Fetch token list if not cached
+    // Fetch token list if not cached with retry logic
     if (!tokenListCache) {
-      const response = await fetch("https://token.jup.ag/strict", {
-        headers: { Accept: "application/json" },
-      });
-
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      tokenListCache = await response.json();
+      tokenListCache = await fetchTokenListWithRetry();
     }
 
-    // Process uncached mints
+    // Process uncached mints with fallback handling
     const results = { ...cachedResults };
 
     for (const mint of uncachedMints) {
@@ -135,7 +129,7 @@ export async function batchGetTokenMetadata(
             symbol: token.symbol,
             logoUri: token.logoURI,
           }
-        : {};
+        : createFallbackMetadata(mint);
 
       tokenMetadataCache.set(mint, metadata);
       results[mint] = metadata;
@@ -144,8 +138,76 @@ export async function batchGetTokenMetadata(
     return results;
   } catch (error) {
     console.error("Error fetching token metadata:", error);
-    return {};
+
+    // Return cached results + fallbacks for uncached mints
+    const fallbackResults: Record<
+      string,
+      { name?: string; symbol?: string; logoUri?: string }
+    > = {};
+
+    for (const mint of mintAddresses) {
+      if (tokenMetadataCache.has(mint)) {
+        fallbackResults[mint] = tokenMetadataCache.get(mint)!;
+      } else {
+        fallbackResults[mint] = createFallbackMetadata(mint);
+      }
+    }
+
+    return fallbackResults;
   }
+}
+
+// Helper function to fetch token list with retry logic
+async function fetchTokenListWithRetry(maxRetries = 3): Promise<any[] | null> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      const response = await fetch("https://token.jup.ag/strict", {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const tokenList = await response.json();
+      console.log(`Successfully fetched token list on attempt ${attempt}`);
+      return tokenList;
+    } catch (error) {
+      console.warn(
+        `Token list fetch attempt ${attempt}/${maxRetries} failed:`,
+        error
+      );
+
+      if (attempt === maxRetries) {
+        console.error("All token list fetch attempts failed, using fallbacks");
+        return null;
+      }
+
+      // Wait before retry (exponential backoff)
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+
+  return null;
+}
+
+// Helper function to create fallback metadata for unknown tokens
+function createFallbackMetadata(mint: string): {
+  name?: string;
+  symbol?: string;
+  logoUri?: string;
+} {
+  return {
+    name: `Token ${mint.slice(0, 8)}...`,
+    symbol: mint.slice(0, 4).toUpperCase(),
+    logoUri: undefined,
+  };
 }
 
 // Get token metadata from Jupiter token list (legacy function for backward compatibility)
@@ -163,10 +225,18 @@ export async function getTokenPrices(
   try {
     if (mintAddresses.length === 0) return {};
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     const response = await fetch(
       `https://api.jup.ag/price/v2?ids=${mintAddresses.join(",")}`,
-      { headers: { Accept: "application/json" } }
+      {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      }
     );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
@@ -188,10 +258,18 @@ export async function getTokenPrices(
 // Get SOL price in USD
 export async function getSolPrice(): Promise<number> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     const response = await fetch(
       "https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112",
-      { headers: { Accept: "application/json" } }
+      {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      }
     );
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
@@ -209,8 +287,6 @@ export async function getWalletBalance(
   walletAddress: string
 ): Promise<WalletBalance> {
   try {
-    console.log("🚀 Starting optimized wallet balance fetch...");
-
     // Step 1: Fetch SOL balance and token holdings concurrently
     const [solBalance, tokenHoldings, solPrice] = await Promise.all([
       getSolBalance(walletAddress),
@@ -218,16 +294,12 @@ export async function getWalletBalance(
       getSolPrice(),
     ]);
 
-    console.log(`📊 Found ${tokenHoldings.length} token holdings`);
-
     // Step 2: Batch fetch metadata and prices for all tokens concurrently
     const tokenMints = tokenHoldings.map((h) => h.mint);
     const [tokenMetadata, prices] = await Promise.all([
       batchGetTokenMetadata(tokenMints),
       getTokenPrices(tokenMints),
     ]);
-
-    console.log("🎯 Metadata and prices fetched in parallel");
 
     // Step 3: Enrich token holdings with metadata and prices
     const enrichedTokens: TokenHolding[] = tokenHoldings.map((holding) => {
@@ -250,8 +322,6 @@ export async function getWalletBalance(
       (sum, token) => sum + (token.valueUsd || 0),
       0
     );
-
-    console.log("✅ Wallet balance calculation completed");
 
     return {
       solBalance,

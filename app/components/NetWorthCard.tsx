@@ -1,34 +1,37 @@
 import { CreditCard } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface NetWorthCardProps {
   totalValue: number;
 }
 
-export default function NetWorthCard({ totalValue }: NetWorthCardProps) {
-  const formatValue = (value: number) => {
-    if (value === 0) return "0.00";
-    if (value < 0.01) return "< 0.01";
-    return value.toLocaleString("en-US", {
+function NetWorthCard({ totalValue }: NetWorthCardProps) {
+  const formattedValue = useMemo(() => {
+    if (totalValue === 0) return "0.00";
+    if (totalValue < 0.01) return "< 0.01";
+    return totalValue.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  };
+  }, [totalValue]);
 
   return (
-    <div className="text-center mb-8">
-      {/* Net Worth Text */}
-      <h2 className="text-white text-xl font-medium mb-4">Net Worth</h2>
+    <div className="text-center mb-6">
+      {/* Net Worth Text - Matching reference image size */}
+      <h2 className="text-white/90 text-lg font-medium mb-3">Net Worth</h2>
 
-      {/* Large Dollar Amount */}
-      <div className="text-white text-6xl font-bold mb-8">
-        ${formatValue(totalValue)}
+      {/* Large Dollar Amount - Matching reference image size and weight */}
+      <div className="text-white text-5xl font-bold mb-6 tracking-tight">
+        ${formattedValue}
       </div>
 
-      {/* Deposit Button - Exact blue from reference */}
-      <button className="bg-[#35C2E2] text-white px-8 py-4 rounded-full font-semibold text-lg flex items-center justify-center gap-2 mx-auto transition-all duration-300 hover:bg-[#2BA8C7]">
-        <CreditCard size={20} />
+      {/* Deposit Button - Liquid glassmorphism style matching reference dimensions */}
+      <button className="bg-[#35C2E2]/90 backdrop-blur-md border border-[#35C2E2]/30 text-white px-12 py-3.5 rounded-full font-medium text-base flex items-center justify-center gap-2 mx-auto transition-all duration-300 hover:bg-[#35C2E2] hover:shadow-lg hover:shadow-[#35C2E2]/25 active:scale-95 min-w-[160px]">
+        <CreditCard size={18} />
         Deposit
       </button>
     </div>
   );
 }
+
+export default memo(NetWorthCard);

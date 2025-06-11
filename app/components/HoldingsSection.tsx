@@ -1,6 +1,7 @@
 import { TokenHolding } from "../lib/solana";
 import TokenCard from "./TokenCard";
 import { Plus } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface HoldingsSectionProps {
   solBalance: number;
@@ -8,31 +9,38 @@ interface HoldingsSectionProps {
   tokens: TokenHolding[];
 }
 
-export default function HoldingsSection({
+function HoldingsSection({
   solBalance,
   solValueUsd = 0,
   tokens,
 }: HoldingsSectionProps) {
   const hasHoldings = solBalance > 0 || tokens.length > 0;
 
-  return (
-    <div className="space-y-6">
-      {/* All Holdings Header */}
-      <h3 className="text-white text-2xl font-bold">All Holdings</h3>
+  // Memoize SOL token card props to prevent unnecessary re-renders
+  const solTokenProps = useMemo(
+    () => ({
+      name: "SOL",
+      symbol: "SOL",
+      balance: solBalance,
+      priceUsd: solBalance > 0 ? (solValueUsd || 0) / solBalance : 0,
+      valueUsd: solValueUsd || 0,
+      logoUri:
+        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    }),
+    [solBalance, solValueUsd]
+  );
 
-      {/* Holdings Container - Dark background like reference */}
-      <div className="bg-gray-900/80 rounded-2xl p-6">
+  return (
+    <div className="space-y-4">
+      {/* All Holdings Header - Matching reference image */}
+      <h3 className="text-white text-xl font-bold px-1">All Holdings</h3>
+
+      {/* Holdings Container - Exact match to reference image */}
+      <div className="bg-[#1a1d29] backdrop-blur-md border border-gray-700/30 rounded-2xl overflow-hidden">
         {hasHoldings ? (
-          <div className="space-y-1">
+          <div className="divide-y divide-gray-700/40">
             {/* SOL Balance - Always show SOL first like reference */}
-            <TokenCard
-              name="SOL"
-              symbol="SOL"
-              balance={solBalance}
-              priceUsd={solValueUsd || 0}
-              valueUsd={solValueUsd || 0}
-              logoUri="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-            />
+            <TokenCard {...solTokenProps} />
 
             {/* SPL Tokens */}
             {tokens.map((token) => (
@@ -49,19 +57,21 @@ export default function HoldingsSection({
           </div>
         ) : (
           /* Empty State */
-          <div className="text-center py-12">
-            <p className="text-white/70 text-lg font-medium">
+          <div className="text-center py-12 px-6">
+            <p className="text-gray-400 text-base">
               You currently don't hold any assets.
             </p>
           </div>
         )}
       </div>
 
-      {/* Manage Tokens Button - Blue like reference */}
-      <button className="w-full bg-[#35C2E2] text-white py-4 rounded-2xl font-semibold text-lg flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#2BA8C7]">
-        <Plus size={20} />
+      {/* Manage Tokens Button - Liquid glassmorphism style */}
+      <button className="w-full bg-[#35C2E2]/90 backdrop-blur-md border border-[#35C2E2]/30 text-white py-3.5 rounded-2xl font-medium text-base flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#35C2E2] hover:shadow-lg hover:shadow-[#35C2E2]/25 active:scale-[0.98]">
+        <Plus size={18} />
         Manage tokens
       </button>
     </div>
   );
 }
+
+export default memo(HoldingsSection);
