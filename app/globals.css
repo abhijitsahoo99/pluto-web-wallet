@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scroll on small screens */
+}
+
+/* Custom styles to match the image aesthetics */
+.bg-hero-pattern {
+  background-attachment: fixed; /* Keep background fixed when scrolling */
+}
+
+/* Adjusting link and button colors for better visibility on dark background */
+@layer components {
+  .social-login-button {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 
+           hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 
+           focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .google-button {
+    @apply bg-white text-gray-800 border border-gray-300 
+           hover:bg-gray-50 social-login-button;
+  }
+
+  .twitter-button {
+    @apply bg-[#1DA1F2] text-white 
+           hover:bg-[#1a8cd8] social-login-button;
+  }
+}
