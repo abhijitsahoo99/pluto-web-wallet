@@ -8,15 +8,49 @@
   --background-end-rgb: 0, 0, 0;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  min-height: 100vh;
-  overflow-x: hidden; /* Prevent horizontal scroll on small screens */
+html {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-/* Custom styles to match the image aesthetics */
-.bg-hero-pattern {
-  background-attachment: fixed; /* Keep background fixed when scrolling */
+body {
+  color: rgb(var(--foreground-rgb));
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
+/* Mobile-first background image optimization */
+.mobile-bg-cover {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  body {
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    overflow: hidden;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .mobile-bg-cover {
+    height: 100vh;
+    height: 100svh;
+    background-attachment: scroll;
+  }
 }
 
 /* Adjusting link and button colors for better visibility on dark background */

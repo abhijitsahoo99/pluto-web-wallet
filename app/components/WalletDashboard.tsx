@@ -4,14 +4,33 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getWalletBalance, WalletBalance } from "../lib/solana";
 import NetWorthCard from "./NetWorthCard";
 import ActionButtons from "./ActionButtons";
-import HoldingsSection from "./HoldingsSection";
+import { AlignJustify } from "lucide-react";
+import TokenCard from "./TokenCard";
 
 interface WalletDashboardProps {
   walletAddress: string;
+  onBalanceUpdate?: (balance: number) => void;
 }
+
+// Constants
+const SOL_LOGO_URI =
+  "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png";
+const POLLING_INTERVAL = 60000; // 60 seconds
+
+// Loading component to reduce duplication
+const LoadingScreen = ({ message }: { message: string }) => (
+  <div
+    className="h-screen w-full mobile-bg-cover flex flex-col items-center justify-center"
+    style={{ backgroundImage: "url('/background.jpg')" }}
+  >
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#35C2E2] mb-4"></div>
+    <p className="text-white/70 text-lg">{message}</p>
+  </div>
+);
 
 export default function WalletDashboard({
   walletAddress,
+  onBalanceUpdate,
 }: WalletDashboardProps) {
   const [walletData, setWalletData] = useState<WalletBalance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,17 +38,16 @@ export default function WalletDashboard({
   const fetchingRef = useRef(false);
 
   const fetchWalletData = useCallback(async () => {
-    // Prevent multiple simultaneous fetches
-    if (fetchingRef.current || !walletAddress || walletAddress.trim() === "") {
-      return;
-    }
+    if (fetchingRef.current || !walletAddress?.trim()) return;
 
     try {
       fetchingRef.current = true;
       setLoading(true);
       setError(null);
+
       const data = await getWalletBalance(walletAddress);
       setWalletData(data);
+      onBalanceUpdate?.(data.totalValueUsd);
     } catch (err) {
       console.error("Error fetching wallet data:", err);
       setError("Failed to fetch wallet data");
@@ -37,59 +55,62 @@ export default function WalletDashboard({
       setLoading(false);
       fetchingRef.current = false;
     }
-  }, [walletAddress]);
+  }, [walletAddress, onBalanceUpdate]);
 
   useEffect(() => {
-    if (walletAddress && walletAddress.trim() !== "") {
-      fetchWalletData();
-
-      // Reduced polling frequency from 30s to 60s for better performance
-      const interval = setInterval(fetchWalletData, 60000);
-      return () => {
-        clearInterval(interval);
-        fetchingRef.current = false;
-      };
-    } else {
-      // Reset state when wallet address is empty
+    if (!walletAddress?.trim()) {
       setWalletData(null);
       setLoading(true);
       setError(null);
+      return;
     }
+
+    fetchWalletData();
+    const interval = setInterval(fetchWalletData, POLLING_INTERVAL);
+
+    return () => {
+      clearInterval(interval);
+      fetchingRef.current = false;
+    };
   }, [fetchWalletData]);
 
-  // Memoize computed values to prevent unnecessary re-renders
-  const memoizedValues = useMemo(
-    () => ({
-      totalValue: walletData?.totalValueUsd || 0,
-      solBalance: walletData?.solBalance || 0,
-      solValueUsd: walletData?.solValueUsd || 0,
-      tokens: walletData?.tokens || [],
-    }),
-    [walletData]
-  );
+  // Memoize computed values and SOL token props
+  const { totalValue, solBalance, solValueUsd, tokens, solTokenProps } =
+    useMemo(() => {
+      const totalValue = walletData?.totalValueUsd || 0;
+      const solBalance = walletData?.solBalance || 0;
+      const solValueUsd = walletData?.solValueUsd || 0;
+      const tokens = walletData?.tokens || [];
 
-  // Show loading for empty wallet address
-  if (!walletAddress || walletAddress.trim() === "") {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#35C2E2] mb-4"></div>
-        <p className="text-white/70 text-lg">Connecting to wallet...</p>
-      </div>
-    );
+      const solTokenProps = {
+        name: "SOL",
+        symbol: "SOL",
+        balance: solBalance,
+        priceUsd: solBalance > 0 ? solValueUsd / solBalance : 0,
+        valueUsd: solValueUsd,
+        logoUri: SOL_LOGO_URI,
+      };
+
+      return { totalValue, solBalance, solValueUsd, tokens, solTokenProps };
+    }, [walletData]);
+
+  const hasHoldings = solBalance > 0 || tokens.length > 0;
+
+  // Early returns for different states
+  if (!walletAddress?.trim()) {
+    return <LoadingScreen message="Connecting to wallet..." />;
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#35C2E2] mb-4"></div>
-        <p className="text-white/70 text-lg">Loading your wallet...</p>
-      </div>
-    );
+    return <LoadingScreen message="Loading your wallet..." />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-cover bg-center pt-16 flex flex-col items-center justify-center">
+      <div
+        className="h-screen w-full mobile-bg-cover flex flex-col items-center justify-center"
+        style={{ backgroundImage: "url('/background.jpg')" }}
+      >
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 backdrop-blur-md">
           <p className="text-red-400 text-lg">{error}</p>
           <button
@@ -104,20 +125,73 @@ export default function WalletDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center pt-16">
-      <div className="container mx-auto px-6 py-6 max-w-sm">
-        {/* Net Worth Card */}
-        <NetWorthCard totalValue={memoizedValues.totalValue} />
+    <div
+      className="h-screen w-full mobile-bg-cover relative"
+      style={{ backgroundImage: "url('/background.jpg')" }}
+    >
+      {/* Navbar Space */}
+      <div className="h-16" />
 
-        {/* Action Buttons */}
-        <ActionButtons />
+      {/* Scrollable Content */}
+      <div className="absolute inset-x-0 bottom-0 top-16">
+        <div className="h-full overflow-y-auto">
+          <div className="px-6">
+            <div className="max-w-sm mx-auto">
+              {/* Net Worth Card */}
+              <div className="mb-6">
+                <NetWorthCard totalValue={totalValue} />
+              </div>
 
-        {/* Holdings Section */}
-        <HoldingsSection
-          solBalance={memoizedValues.solBalance}
-          solValueUsd={memoizedValues.solValueUsd}
-          tokens={memoizedValues.tokens}
-        />
+              {/* Action Buttons */}
+              <div className="mb-8">
+                <ActionButtons />
+              </div>
+
+              {/* All Holdings Header */}
+              <h3 className="text-white text-xl font-bold mb-4 px-1">
+                All Holdings
+              </h3>
+
+              {/* Holdings Container */}
+              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden mb-4">
+                {hasHoldings ? (
+                  <div className="divide-y divide-white/10">
+                    {/* SOL Balance */}
+                    <TokenCard {...solTokenProps} />
+
+                    {/* SPL Tokens */}
+                    {tokens.map((token) => (
+                      <TokenCard
+                        key={token.mint}
+                        name={token.name || "Unknown Token"}
+                        symbol={token.symbol || token.mint.slice(0, 6)}
+                        balance={token.uiAmount}
+                        priceUsd={token.priceUsd || 0}
+                        valueUsd={token.valueUsd || 0}
+                        logoUri={token.logoUri}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 px-6">
+                    <p className="text-gray-400 text-base">
+                      You currently don't hold any assets.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Manage Tokens Button */}
+              <button className="w-full bg-[#35C2E2]/90 backdrop-blur-md border border-[#35C2E2]/30 text-white py-3.5 rounded-2xl font-medium text-base flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#35C2E2] hover:shadow-lg hover:shadow-[#35C2E2]/25 active:scale-[0.98]">
+                <AlignJustify size={18} />
+                Manage tokens
+              </button>
+
+              {/* Bottom Padding */}
+              <div className="h-20" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

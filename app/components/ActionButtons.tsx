@@ -1,4 +1,4 @@
-import { Send, ArrowDownToLine, RotateCcw } from "lucide-react";
+import { Send, ArrowDownToLine, ArrowLeftRight } from "lucide-react";
 import { memo } from "react";
 
 function ActionButtons() {
@@ -23,7 +23,7 @@ function ActionButtons() {
       {/* Swap Button */}
       <button className="flex flex-col items-center gap-2 group">
         <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/15 hover:scale-105 active:scale-95 shadow-lg shadow-black/10">
-          <RotateCcw size={22} className="text-white" />
+          <ArrowLeftRight size={22} className="text-white" />
         </div>
         <span className="text-white/90 text-sm font-medium">Swap</span>
       </button>

@@ -2,16 +2,19 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 import { useState, useMemo, useCallback } from "react";
 import WalletDashboard from "./components/WalletDashboard";
+import { ScanLine } from "lucide-react";
 
 export default function Home() {
-  const { login, authenticated, ready, user } = usePrivy();
+  const { login, authenticated, ready, user, logout } = usePrivy();
 
   const sendAddress = "SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa";
   const shortSend = sendAddress.slice(0, 4) + "..." + sendAddress.slice(-4);
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(sendAddress);
@@ -36,6 +39,11 @@ export default function Home() {
   // Memoize sidebar handlers
   const handleSidebarOpen = useCallback(() => setSidebarOpen(true), []);
   const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
+
+  // Handle wallet balance updates from WalletDashboard
+  const handleWalletBalanceUpdate = useCallback((balance: number) => {
+    setWalletBalance(balance);
+  }, []);
 
   // Show loading state while Privy is initializing
   if (!ready) {
@@ -72,9 +80,9 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="fixed bottom-6 left-0 w-full flex items-end justify-center pointer-events-none z-40">
+        <footer className="fixed bottom-6 left-0 w-full flex items-end justify-between pointer-events-none z-40 px-6">
           {/* Left: Terms & Privacy */}
-          <div className="absolute left-6 bottom-0 flex flex-col items-start pointer-events-auto">
+          <div className="flex flex-col items-start pointer-events-auto">
             <div className="flex gap-4 text-sm text-white/60">
               <a href="#" className="hover:underline">
                 Terms
@@ -84,7 +92,8 @@ export default function Home() {
               </a>
             </div>
           </div>
-          {/* Center: Send button */}
+
+          {/* Right: Send button */}
           <div className="flex items-center gap-2 pointer-events-auto">
             {/* Glassy circle for send icon */}
             <div className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-cyan-200/30 flex items-center justify-center shadow-lg">
@@ -152,10 +161,10 @@ export default function Home() {
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
       {/* Minimal Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10 flex items-center justify-between h-16 px-4">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-4">
         {/* Wallet Icon (left) */}
         <button
-          className="w-10 h-10 bg-gradient-to-r from-[#35C2E2] to-[#4F84F5] rounded-full flex items-center justify-center"
+          className="w-10 h-10 bg-gradient-to-r bg-[#35C2E2] rounded-full flex items-center justify-center"
           onClick={handleSidebarOpen}
           aria-label="Open wallet sidebar"
         >
@@ -166,43 +175,25 @@ export default function Home() {
           className="w-10 h-10 flex items-center justify-center"
           aria-label="Open scanner"
         >
-          {/* Lucide ScanLine SVG */}
-          <svg
-            width="28"
-            height="28"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            viewBox="0 0 24 24"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="2" />
-            <rect x="14" y="3" width="7" height="7" rx="2" />
-            <rect x="14" y="14" width="7" height="7" rx="2" />
-            <rect x="3" y="14" width="7" height="7" rx="2" />
-          </svg>
+          <ScanLine size={28} stroke="white" strokeWidth={2} />
         </button>
       </nav>
 
-      {/* Sidebar (basic for now) */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="w-64 bg-black/80 backdrop-blur-lg p-6">
-            <button className="mb-4 text-white" onClick={handleSidebarClose}>
-              Close
-            </button>
-            {/* Sidebar content goes here */}
-            <div className="text-white">Sidebar (to be updated)</div>
-          </div>
-          <div className="flex-1" onClick={handleSidebarClose} />
-        </div>
-      )}
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={handleSidebarClose}
+        walletAddress={walletAddress}
+        user={user}
+        onLogout={logout}
+        totalValueUsd={walletBalance}
+      />
 
-      {/* Main dashboard content */}
-      <main className="pt-20 px-0 max-w-sm mx-auto w-full">
-        <WalletDashboard walletAddress={walletAddress} />
-      </main>
+      {/* Main Content */}
+      <WalletDashboard
+        walletAddress={walletAddress}
+        onBalanceUpdate={handleWalletBalanceUpdate}
+      />
     </div>
   );
 }

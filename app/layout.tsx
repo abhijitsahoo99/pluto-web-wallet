@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.className}>
-      <body>
+      <body className="min-h-screen overflow-x-hidden">
         <PrivyAuthProvider>{children}</PrivyAuthProvider>
       </body>
     </html>

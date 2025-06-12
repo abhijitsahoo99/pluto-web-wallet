@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "bun run --bun next dev",
+    "dev:https": "bun run --bun next dev --experimental-https --experimental-https-key ./localhost+3-key.pem --experimental-https-cert ./localhost+3.pem",
     "build": "bun run --bun next build",
     "start": "bun run --bun next start",
     "lint": "bun run --bun next lint"
