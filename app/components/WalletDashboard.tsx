@@ -6,6 +6,7 @@ import NetWorthCard from "./NetWorthCard";
 import ActionButtons from "./ActionButtons";
 import { AlignJustify } from "lucide-react";
 import TokenCard from "./TokenCard";
+import ManageTokensModal from "./ManageTokensModal";
 
 interface WalletDashboardProps {
   walletAddress: string;
@@ -35,6 +36,10 @@ export default function WalletDashboard({
   const [walletData, setWalletData] = useState<WalletBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isManageTokensOpen, setIsManageTokensOpen] = useState(false);
+  const [visibleTokens, setVisibleTokens] = useState<Set<string>>(
+    new Set(["SOL"])
+  ); // SOL visible by default
   const fetchingRef = useRef(false);
 
   const fetchWalletData = useCallback(async () => {
@@ -48,6 +53,19 @@ export default function WalletDashboard({
       const data = await getWalletBalance(walletAddress);
       setWalletData(data);
       onBalanceUpdate?.(data.totalValueUsd);
+
+      // Auto-add new tokens to visible set (optional - you can remove this if you want manual control)
+      if (data.tokens.length > 0) {
+        setVisibleTokens((prev) => {
+          const newSet = new Set(prev);
+          data.tokens.forEach((token) => {
+            if (!newSet.has(token.mint)) {
+              newSet.add(token.mint); // Auto-show new tokens
+            }
+          });
+          return newSet;
+        });
+      }
     } catch (err) {
       console.error("Error fetching wallet data:", err);
       setError("Failed to fetch wallet data");
@@ -74,27 +92,63 @@ export default function WalletDashboard({
     };
   }, [fetchWalletData]);
 
-  // Memoize computed values and SOL token props
-  const { totalValue, solBalance, solValueUsd, tokens, solTokenProps } =
-    useMemo(() => {
-      const totalValue = walletData?.totalValueUsd || 0;
-      const solBalance = walletData?.solBalance || 0;
-      const solValueUsd = walletData?.solValueUsd || 0;
-      const tokens = walletData?.tokens || [];
+  // Memoize computed values and filter visible tokens
+  const {
+    totalValue,
+    solBalance,
+    solValueUsd,
+    tokens,
+    solTokenProps,
+    visibleTokensList,
+  } = useMemo(() => {
+    const totalValue = walletData?.totalValueUsd || 0;
+    const solBalance = walletData?.solBalance || 0;
+    const solValueUsd = walletData?.solValueUsd || 0;
+    const tokens = walletData?.tokens || [];
 
-      const solTokenProps = {
-        name: "SOL",
-        symbol: "SOL",
-        balance: solBalance,
-        priceUsd: solBalance > 0 ? solValueUsd / solBalance : 0,
-        valueUsd: solValueUsd,
-        logoUri: SOL_LOGO_URI,
-      };
+    // Filter tokens based on visibility
+    const visibleTokensList = tokens.filter((token) =>
+      visibleTokens.has(token.mint)
+    );
 
-      return { totalValue, solBalance, solValueUsd, tokens, solTokenProps };
-    }, [walletData]);
+    const solTokenProps = {
+      name: "SOL",
+      symbol: "SOL",
+      balance: solBalance,
+      priceUsd: solBalance > 0 ? solValueUsd / solBalance : 0,
+      valueUsd: solValueUsd,
+      logoUri: SOL_LOGO_URI,
+    };
 
-  const hasHoldings = solBalance > 0 || tokens.length > 0;
+    return {
+      totalValue,
+      solBalance,
+      solValueUsd,
+      tokens,
+      solTokenProps,
+      visibleTokensList,
+    };
+  }, [walletData, visibleTokens]);
+
+  const hasVisibleHoldings =
+    (visibleTokens.has("SOL") && solBalance > 0) ||
+    visibleTokensList.length > 0;
+
+  // Handle token visibility toggle
+  const handleToggleToken = useCallback(
+    (tokenMint: string, isVisible: boolean) => {
+      setVisibleTokens((prev) => {
+        const newSet = new Set(prev);
+        if (isVisible) {
+          newSet.add(tokenMint);
+        } else {
+          newSet.delete(tokenMint);
+        }
+        return newSet;
+      });
+    },
+    []
+  );
 
   // Early returns for different states
   if (!walletAddress?.trim()) {
@@ -125,74 +179,94 @@ export default function WalletDashboard({
   }
 
   return (
-    <div
-      className="h-screen w-full mobile-bg-cover relative"
-      style={{ backgroundImage: "url('/background.jpg')" }}
-    >
-      {/* Navbar Space */}
-      <div className="h-16" />
+    <>
+      <div
+        className="h-screen w-full mobile-bg-cover relative"
+        style={{ backgroundImage: "url('/background.jpg')" }}
+      >
+        {/* Navbar Space */}
+        <div className="h-16" />
 
-      {/* Scrollable Content */}
-      <div className="absolute inset-x-0 bottom-0 top-16">
-        <div className="h-full overflow-y-auto">
-          <div className="px-6">
-            <div className="max-w-sm mx-auto">
-              {/* Net Worth Card */}
-              <div className="mb-6">
-                <NetWorthCard totalValue={totalValue} />
+        {/* Scrollable Content */}
+        <div className="absolute inset-x-0 bottom-0 top-16">
+          <div className="h-full overflow-y-auto">
+            <div className="px-6">
+              <div className="max-w-sm mx-auto">
+                {/* Net Worth Card */}
+                <div className="mb-6">
+                  <NetWorthCard totalValue={totalValue} />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mb-8">
+                  <ActionButtons />
+                </div>
+
+                {/* All Holdings Header */}
+                <h3 className="text-white text-xl font-bold mb-4 px-1">
+                  All Holdings
+                </h3>
+
+                {/* Holdings Container */}
+                <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden mb-4">
+                  {hasVisibleHoldings ? (
+                    <div className="divide-y divide-white/10">
+                      {/* SOL Balance - only show if visible and has balance */}
+                      {visibleTokens.has("SOL") && solBalance > 0 && (
+                        <TokenCard {...solTokenProps} />
+                      )}
+
+                      {/* Visible SPL Tokens */}
+                      {visibleTokensList.map((token) => (
+                        <TokenCard
+                          key={token.mint}
+                          name={token.name || "Unknown Token"}
+                          symbol={token.symbol || token.mint.slice(0, 6)}
+                          balance={token.uiAmount}
+                          priceUsd={token.priceUsd || 0}
+                          valueUsd={token.valueUsd || 0}
+                          logoUri={token.logoUri}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 px-6">
+                      <p className="text-gray-400 text-base">
+                        {solBalance > 0 || tokens.length > 0
+                          ? "No tokens selected for display. Use 'Manage tokens' to show your holdings."
+                          : "You currently don't hold any assets."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Manage Tokens Button */}
+                <button
+                  onClick={() => setIsManageTokensOpen(true)}
+                  className="w-full bg-[#35C2E2]/90 backdrop-blur-md border border-[#35C2E2]/30 text-white py-3.5 rounded-2xl font-medium text-base flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#35C2E2] hover:shadow-lg hover:shadow-[#35C2E2]/25 active:scale-[0.98]"
+                >
+                  <AlignJustify size={18} />
+                  Manage tokens
+                </button>
+
+                {/* Bottom Padding */}
+                <div className="h-20" />
               </div>
-
-              {/* Action Buttons */}
-              <div className="mb-8">
-                <ActionButtons />
-              </div>
-
-              {/* All Holdings Header */}
-              <h3 className="text-white text-xl font-bold mb-4 px-1">
-                All Holdings
-              </h3>
-
-              {/* Holdings Container */}
-              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden mb-4">
-                {hasHoldings ? (
-                  <div className="divide-y divide-white/10">
-                    {/* SOL Balance */}
-                    <TokenCard {...solTokenProps} />
-
-                    {/* SPL Tokens */}
-                    {tokens.map((token) => (
-                      <TokenCard
-                        key={token.mint}
-                        name={token.name || "Unknown Token"}
-                        symbol={token.symbol || token.mint.slice(0, 6)}
-                        balance={token.uiAmount}
-                        priceUsd={token.priceUsd || 0}
-                        valueUsd={token.valueUsd || 0}
-                        logoUri={token.logoUri}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 px-6">
-                    <p className="text-gray-400 text-base">
-                      You currently don't hold any assets.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Manage Tokens Button */}
-              <button className="w-full bg-[#35C2E2]/90 backdrop-blur-md border border-[#35C2E2]/30 text-white py-3.5 rounded-2xl font-medium text-base flex items-center justify-center gap-2 transition-all duration-300 hover:bg-[#35C2E2] hover:shadow-lg hover:shadow-[#35C2E2]/25 active:scale-[0.98]">
-                <AlignJustify size={18} />
-                Manage tokens
-              </button>
-
-              {/* Bottom Padding */}
-              <div className="h-20" />
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Manage Tokens Modal */}
+      <ManageTokensModal
+        isOpen={isManageTokensOpen}
+        onClose={() => setIsManageTokensOpen(false)}
+        solBalance={solBalance}
+        solValueUsd={solValueUsd}
+        tokens={tokens}
+        visibleTokens={visibleTokens}
+        onToggleToken={handleToggleToken}
+      />
+    </>
   );
 }
