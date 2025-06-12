@@ -43,6 +43,7 @@ export default function WalletDashboard({
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(() => {
     // Initialize from localStorage or default to SOL only
     if (typeof window !== "undefined") {
@@ -73,60 +74,87 @@ export default function WalletDashboard({
     }
   }, [visibleTokens, walletAddress]);
 
-  const fetchWalletData = useCallback(async () => {
-    if (fetchingRef.current || !walletAddress?.trim()) return;
+  const fetchWalletData = useCallback(
+    async (isBackground = false) => {
+      if (fetchingRef.current || !walletAddress?.trim()) return;
 
-    try {
-      fetchingRef.current = true;
-      setLoading(true);
-      setError(null);
+      try {
+        fetchingRef.current = true;
 
-      const data = await getWalletBalance(walletAddress);
-      setWalletData(data);
-      onBalanceUpdate?.(data.totalValueUsd);
-
-      // Only auto-add new tokens on first load (when no localStorage data exists)
-      // This prevents re-adding tokens that user has explicitly hidden
-      if (data.tokens.length > 0) {
-        const hasStoredPreferences =
-          typeof window !== "undefined" &&
-          localStorage.getItem(`visibleTokens_${walletAddress}`);
-
-        if (!hasStoredPreferences) {
-          // First time loading - auto-show all tokens
-          setVisibleTokens((prev) => {
-            const newSet = new Set(prev);
-            data.tokens.forEach((token) => {
-              newSet.add(token.mint);
-            });
-            return newSet;
-          });
+        // Only show loading screen on initial load, not background updates
+        if (!isBackground && isInitialLoad) {
+          setLoading(true);
         }
+
+        setError(null);
+
+        const data = await getWalletBalance(walletAddress);
+        setWalletData(data);
+        onBalanceUpdate?.(data.totalValueUsd);
+
+        // Only auto-add new tokens on first load (when no localStorage data exists)
+        // This prevents re-adding tokens that user has explicitly hidden
+        if (data.tokens.length > 0) {
+          const hasStoredPreferences =
+            typeof window !== "undefined" &&
+            localStorage.getItem(`visibleTokens_${walletAddress}`);
+
+          if (!hasStoredPreferences) {
+            // First time loading - auto-show all tokens
+            setVisibleTokens((prev) => {
+              const newSet = new Set(prev);
+              data.tokens.forEach((token) => {
+                newSet.add(token.mint);
+              });
+              return newSet;
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching wallet data:", err);
+
+        // Only show error screen if it's not a background update and we don't have existing data
+        if (!isBackground || !walletData) {
+          setError("Failed to fetch wallet data");
+        }
+      } finally {
+        if (isInitialLoad) {
+          setLoading(false);
+          setIsInitialLoad(false);
+        }
+        fetchingRef.current = false;
       }
-    } catch (err) {
-      console.error("Error fetching wallet data:", err);
-      setError("Failed to fetch wallet data");
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
-    }
-  }, [walletAddress, onBalanceUpdate]);
+    },
+    [walletAddress, onBalanceUpdate, isInitialLoad, walletData]
+  );
 
   useEffect(() => {
     if (!walletAddress?.trim()) {
       setWalletData(null);
       setLoading(true);
       setError(null);
+      setIsInitialLoad(true);
       return;
     }
 
-    fetchWalletData();
-    const interval = setInterval(fetchWalletData, POLLING_INTERVAL);
+    // Initial load
+    fetchWalletData(false);
+
+    // Background polling - doesn't interfere with UI
+    const interval = setInterval(() => {
+      fetchWalletData(true);
+    }, POLLING_INTERVAL);
 
     return () => {
       clearInterval(interval);
       fetchingRef.current = false;
     };
+  }, [fetchWalletData]);
+
+  // Manual refresh function for error retry
+  const handleManualRefresh = useCallback(() => {
+    setIsInitialLoad(true);
+    fetchWalletData(false);
   }, [fetchWalletData]);
 
   // Memoize computed values and filter visible tokens
@@ -192,11 +220,11 @@ export default function WalletDashboard({
     return <LoadingScreen message="Connecting to wallet..." />;
   }
 
-  if (loading) {
+  if (loading && isInitialLoad) {
     return <LoadingScreen message="Loading your wallet..." />;
   }
 
-  if (error) {
+  if (error && !walletData) {
     return (
       <div
         className="h-screen w-full mobile-bg-cover flex flex-col items-center justify-center"
@@ -205,7 +233,7 @@ export default function WalletDashboard({
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 backdrop-blur-md">
           <p className="text-red-400 text-lg">{error}</p>
           <button
-            onClick={fetchWalletData}
+            onClick={handleManualRefresh}
             className="mt-4 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
           >
             Retry
