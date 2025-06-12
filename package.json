@@ -10,6 +10,7 @@
     "lint": "bun run --bun next lint"
   },
   "dependencies": {
+    "@jup-ag/api": "^6.0.42",
     "@privy-io/react-auth": "^2.14.1",
     "@solana/spl-token": "^0.4.13",
     "@solana/spl-token-registry": "^0.2.4574",

@@ -9,6 +9,7 @@ import TokenCard from "./TokenCard";
 import ManageTokensModal from "./ManageTokensModal";
 import SendModal from "./SendModal";
 import ReceiveModal from "./ReceiveModal";
+import SwapModal from "./SwapModal";
 
 interface WalletDashboardProps {
   walletAddress: string;
@@ -41,6 +42,7 @@ export default function WalletDashboard({
   const [isManageTokensOpen, setIsManageTokensOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+  const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(() => {
     // Initialize from localStorage or default to SOL only
     if (typeof window !== "undefined") {
@@ -237,6 +239,7 @@ export default function WalletDashboard({
                   <ActionButtons
                     onSendClick={() => setIsSendModalOpen(true)}
                     onReceiveClick={() => setIsReceiveModalOpen(true)}
+                    onSwapClick={() => setIsSwapModalOpen(true)}
                   />
                 </div>
 
@@ -320,6 +323,15 @@ export default function WalletDashboard({
       <ReceiveModal
         isOpen={isReceiveModalOpen}
         onClose={() => setIsReceiveModalOpen(false)}
+        walletAddress={walletAddress}
+      />
+
+      {/* Swap Modal */}
+      <SwapModal
+        isOpen={isSwapModalOpen}
+        onClose={() => setIsSwapModalOpen(false)}
+        solBalance={solBalance}
+        tokens={tokens}
         walletAddress={walletAddress}
       />
     </>
