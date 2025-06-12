@@ -3,9 +3,10 @@ import { memo } from "react";
 
 interface ActionButtonsProps {
   onSendClick?: () => void;
+  onReceiveClick?: () => void;
 }
 
-function ActionButtons({ onSendClick }: ActionButtonsProps) {
+function ActionButtons({ onSendClick, onReceiveClick }: ActionButtonsProps) {
   return (
     <div className="flex justify-center items-center gap-8 mb-8 px-4">
       {/* Send Button */}
@@ -20,7 +21,10 @@ function ActionButtons({ onSendClick }: ActionButtonsProps) {
       </button>
 
       {/* Receive Button */}
-      <button className="flex flex-col items-center gap-2 group">
+      <button
+        onClick={onReceiveClick}
+        className="flex flex-col items-center gap-2 group"
+      >
         <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/15 hover:scale-105 active:scale-95 shadow-lg shadow-black/10">
           <ArrowDownToLine size={22} className="text-white" />
         </div>

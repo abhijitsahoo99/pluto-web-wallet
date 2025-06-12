@@ -16,10 +16,12 @@
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-standard-wallet-adapter-base": "^1.1.4",
     "@solana/web3.js": "^1.98.2",
+    "@types/qrcode": "^1.5.5",
     "@wallet-standard/app": "^1.1.0",
     "lucide-react": "^0.514.0",
     "next": "15.3.3",
     "node-fetch": "^3.3.2",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0"

@@ -8,6 +8,7 @@ import { AlignJustify } from "lucide-react";
 import TokenCard from "./TokenCard";
 import ManageTokensModal from "./ManageTokensModal";
 import SendModal from "./SendModal";
+import ReceiveModal from "./ReceiveModal";
 
 interface WalletDashboardProps {
   walletAddress: string;
@@ -39,6 +40,7 @@ export default function WalletDashboard({
   const [error, setError] = useState<string | null>(null);
   const [isManageTokensOpen, setIsManageTokensOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(() => {
     // Initialize from localStorage or default to SOL only
     if (typeof window !== "undefined") {
@@ -232,7 +234,10 @@ export default function WalletDashboard({
 
                 {/* Action Buttons */}
                 <div className="mb-8">
-                  <ActionButtons onSendClick={() => setIsSendModalOpen(true)} />
+                  <ActionButtons
+                    onSendClick={() => setIsSendModalOpen(true)}
+                    onReceiveClick={() => setIsReceiveModalOpen(true)}
+                  />
                 </div>
 
                 {/* All Holdings Header */}
@@ -308,6 +313,13 @@ export default function WalletDashboard({
         solBalance={solBalance}
         solValueUsd={solValueUsd}
         tokens={tokens}
+        walletAddress={walletAddress}
+      />
+
+      {/* Receive Modal */}
+      <ReceiveModal
+        isOpen={isReceiveModalOpen}
+        onClose={() => setIsReceiveModalOpen(false)}
         walletAddress={walletAddress}
       />
     </>
