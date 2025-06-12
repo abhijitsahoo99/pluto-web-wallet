@@ -16,6 +16,7 @@ export interface Transaction {
   timestamp: number;
   status: "success" | "failed";
   fee?: number;
+  slot?: number;
   swapDetails?: {
     fromToken: string;
     fromSymbol: string;
@@ -234,6 +235,7 @@ function detectSwapTransaction(
       timestamp: tx.blockTime || 0,
       status: "success",
       fee: (tx.meta.fee || 0) / 1e9,
+      slot: tx.slot,
       swapDetails: {
         fromToken,
         fromSymbol,
@@ -328,10 +330,12 @@ function parseTransactionOptimized(
   const signature = tx.transaction.signatures[0];
   const timestamp = tx.blockTime || 0;
   const fee = (tx.meta.fee || 0) / 1e9;
+  const slot = tx.slot;
 
   // First check if it's a swap
   const swapTx = detectSwapTransaction(tx, walletAddress);
   if (swapTx) {
+    swapTx.slot = slot;
     return swapTx;
   }
 
@@ -376,6 +380,7 @@ function parseTransactionOptimized(
         timestamp,
         status: "success",
         fee: isReceive ? undefined : fee,
+        slot,
       } as Transaction;
     }
   }
@@ -424,6 +429,7 @@ function parseTransactionOptimized(
           timestamp,
           status: "success",
           fee: isReceive ? undefined : fee,
+          slot,
         };
       }
     }

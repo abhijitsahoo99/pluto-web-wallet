@@ -8,9 +8,13 @@ import { Transaction, formatTimeAgo } from "../lib/transactions";
 
 interface TransactionCardProps {
   transaction: Transaction;
+  onClick?: (transaction: Transaction) => void;
 }
 
-export default function TransactionCard({ transaction }: TransactionCardProps) {
+export default function TransactionCard({
+  transaction,
+  onClick,
+}: TransactionCardProps) {
   const getTransactionIcon = () => {
     switch (transaction.type) {
       case "send":
@@ -93,12 +97,21 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
     );
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(transaction);
+    }
+  };
+
   return (
-    <div className="bg-slate-700/40 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-4 flex items-center justify-between">
+    <button
+      onClick={handleClick}
+      className="w-full bg-slate-700/40 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-4 flex items-center justify-between hover:bg-slate-700/60 transition-colors"
+    >
       {/* Left side - Icon and details */}
       <div className="flex items-center gap-3">
         {getTransactionIcon()}
-        <div>
+        <div className="text-left">
           <div className="text-white text-sm font-medium">
             {getTransactionTitle()}
           </div>
@@ -110,6 +123,6 @@ export default function TransactionCard({ transaction }: TransactionCardProps) {
 
       {/* Right side - Amount */}
       {getAmountDisplay()}
-    </div>
+    </button>
   );
 }
