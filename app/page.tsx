@@ -5,10 +5,12 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import { useState, useMemo, useCallback } from "react";
 import WalletDashboard from "./components/WalletDashboard";
-import { ScanLine } from "lucide-react";
+import { ScanLine, Receipt } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const { login, authenticated, ready, user, logout } = usePrivy();
+  const router = useRouter();
 
   const sendAddress = "SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa";
   const shortSend = sendAddress.slice(0, 4) + "..." + sendAddress.slice(-4);
@@ -21,6 +23,11 @@ export default function Home() {
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }, [sendAddress]);
+
+  // Navigate to transactions page
+  const handleTransactionsClick = useCallback(() => {
+    router.push("/transactions");
+  }, [router]);
 
   // Optimize wallet address computation with memoization
   const walletAddress = useMemo(() => {
@@ -170,13 +177,26 @@ export default function Home() {
         >
           <span className="text-white font-bold text-lg">W</span>
         </button>
-        {/* Scanner Icon (right) */}
-        <button
-          className="w-10 h-10 flex items-center justify-center"
-          aria-label="Open scanner"
-        >
-          <ScanLine size={28} stroke="white" strokeWidth={2} />
-        </button>
+
+        {/* Right Icons */}
+        <div className="flex items-center gap-3">
+          {/* Transaction Icon */}
+          <button
+            className="w-10 h-10 flex items-center justify-center"
+            onClick={handleTransactionsClick}
+            aria-label="View transactions"
+          >
+            <Receipt size={28} stroke="white" strokeWidth={2} />
+          </button>
+
+          {/* Scanner Icon */}
+          <button
+            className="w-10 h-10 flex items-center justify-center"
+            aria-label="Open scanner"
+          >
+            <ScanLine size={28} stroke="white" strokeWidth={2} />
+          </button>
+        </div>
       </nav>
 
       {/* Sidebar */}
