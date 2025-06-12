@@ -37,10 +37,35 @@ export default function WalletDashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isManageTokensOpen, setIsManageTokensOpen] = useState(false);
-  const [visibleTokens, setVisibleTokens] = useState<Set<string>>(
-    new Set(["SOL"])
-  ); // SOL visible by default
+  const [visibleTokens, setVisibleTokens] = useState<Set<string>>(() => {
+    // Initialize from localStorage or default to SOL only
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`visibleTokens_${walletAddress}`);
+        if (saved) {
+          return new Set(JSON.parse(saved));
+        }
+      } catch (error) {
+        console.warn("Failed to load visible tokens from localStorage:", error);
+      }
+    }
+    return new Set(["SOL"]); // Default: SOL visible
+  });
   const fetchingRef = useRef(false);
+
+  // Persist visible tokens to localStorage whenever it changes
+  useEffect(() => {
+    if (walletAddress && visibleTokens.size > 0) {
+      try {
+        localStorage.setItem(
+          `visibleTokens_${walletAddress}`,
+          JSON.stringify(Array.from(visibleTokens))
+        );
+      } catch (error) {
+        console.warn("Failed to save visible tokens to localStorage:", error);
+      }
+    }
+  }, [visibleTokens, walletAddress]);
 
   const fetchWalletData = useCallback(async () => {
     if (fetchingRef.current || !walletAddress?.trim()) return;
@@ -54,17 +79,23 @@ export default function WalletDashboard({
       setWalletData(data);
       onBalanceUpdate?.(data.totalValueUsd);
 
-      // Auto-add new tokens to visible set (optional - you can remove this if you want manual control)
+      // Only auto-add new tokens on first load (when no localStorage data exists)
+      // This prevents re-adding tokens that user has explicitly hidden
       if (data.tokens.length > 0) {
-        setVisibleTokens((prev) => {
-          const newSet = new Set(prev);
-          data.tokens.forEach((token) => {
-            if (!newSet.has(token.mint)) {
-              newSet.add(token.mint); // Auto-show new tokens
-            }
+        const hasStoredPreferences =
+          typeof window !== "undefined" &&
+          localStorage.getItem(`visibleTokens_${walletAddress}`);
+
+        if (!hasStoredPreferences) {
+          // First time loading - auto-show all tokens
+          setVisibleTokens((prev) => {
+            const newSet = new Set(prev);
+            data.tokens.forEach((token) => {
+              newSet.add(token.mint);
+            });
+            return newSet;
           });
-          return newSet;
-        });
+        }
       }
     } catch (err) {
       console.error("Error fetching wallet data:", err);
