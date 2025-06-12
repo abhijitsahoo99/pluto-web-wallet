@@ -7,6 +7,7 @@ import ActionButtons from "./ActionButtons";
 import { AlignJustify } from "lucide-react";
 import TokenCard from "./TokenCard";
 import ManageTokensModal from "./ManageTokensModal";
+import SendModal from "./SendModal";
 
 interface WalletDashboardProps {
   walletAddress: string;
@@ -37,6 +38,7 @@ export default function WalletDashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isManageTokensOpen, setIsManageTokensOpen] = useState(false);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(() => {
     // Initialize from localStorage or default to SOL only
     if (typeof window !== "undefined") {
@@ -230,7 +232,7 @@ export default function WalletDashboard({
 
                 {/* Action Buttons */}
                 <div className="mb-8">
-                  <ActionButtons />
+                  <ActionButtons onSendClick={() => setIsSendModalOpen(true)} />
                 </div>
 
                 {/* All Holdings Header */}
@@ -297,6 +299,16 @@ export default function WalletDashboard({
         tokens={tokens}
         visibleTokens={visibleTokens}
         onToggleToken={handleToggleToken}
+      />
+
+      {/* Send Modal */}
+      <SendModal
+        isOpen={isSendModalOpen}
+        onClose={() => setIsSendModalOpen(false)}
+        solBalance={solBalance}
+        solValueUsd={solValueUsd}
+        tokens={tokens}
+        walletAddress={walletAddress}
       />
     </>
   );
