@@ -313,8 +313,8 @@ export default function WalletDashboard({
         {/* Scrollable Content */}
         <div className="absolute inset-x-0 bottom-0 top-16">
           <div className="h-full overflow-y-auto">
-            <div className="px-6">
-              <div className="max-w-sm mx-auto">
+            <div className="px-4">
+              <div className="max-w-md mx-auto">
                 {/* Net Worth Card */}
                 <div className="mb-6">
                   <NetWorthCard totalValue={totalValue} />

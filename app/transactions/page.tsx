@@ -94,7 +94,7 @@ export default function TransactionsPage() {
 
   // Handle back navigation
   const handleBack = useCallback(() => {
-    router.back();
+    router.push("/");
   }, [router]);
 
   // Handle transaction card click
