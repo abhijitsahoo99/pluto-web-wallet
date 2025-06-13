@@ -59,7 +59,7 @@ export default function TransactionDetailsModal({
       case "receive":
         return <ArrowDownLeft size={20} className="text-cyan-400" />;
       case "swap":
-        return <RefreshCw size={20} className="text-purple-400" />;
+        return <RefreshCw size={20} style={{ color: "#9f25b0" }} />;
       default:
         return <ArrowUpRight size={20} className="text-cyan-400" />;
     }
@@ -103,9 +103,7 @@ export default function TransactionDetailsModal({
   return (
     <div
       className={`fixed inset-0 z-50 transition-all duration-300 ${
-        isAnimating && isOpen
-          ? "bg-black/50 backdrop-blur-sm"
-          : "bg-transparent"
+        isAnimating && isOpen ? "bg-[#051016]" : "bg-transparent"
       }`}
       onClick={handleBackdropClick}
     >
@@ -114,24 +112,21 @@ export default function TransactionDetailsModal({
           isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
-          maxHeight: "90vh",
-          background:
-            "linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 42, 58, 0.95) 50%, rgba(36, 49, 66, 0.95) 100%)",
-          backdropFilter: "blur(20px)",
+          maxHeight: "80vh",
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-center p-6 border-b border-white/10 relative">
-          <div className="w-12 h-1 bg-white/20 rounded-full absolute top-3" />
-          <h2 className="text-white text-lg font-medium">
-            Transaction Details
-          </h2>
+        <div className="flex items-center justify-center p-4 border-b border-white/10 relative">
+          <div className="w-12 h-1 bg-white/20 rounded-full absolute top-4" />
           <button
             onClick={handleClose}
             className="absolute right-6 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
+          <h2 className="text-white text-lg font-medium">
+            Transaction Details
+          </h2>
         </div>
 
         {/* Content */}
@@ -140,16 +135,30 @@ export default function TransactionDetailsModal({
           style={{ maxHeight: "calc(90vh - 80px)" }}
         >
           {/* Transaction Type Card */}
-          <div className="bg-slate-700/40 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-4 mb-6">
+          <div
+            className={`backdrop-blur-sm border border-slate-600/30 rounded-2xl p-3 mb-6 ${
+              transaction.type === "swap" ? "bg-[#19132b]" : "bg-[#16303e]"
+            }`}
+          >
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-slate-600/60 flex items-center justify-center">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  transaction.type === "swap" ? "bg-[#3A184F]" : "bg-[#335a62]"
+                }`}
+              >
                 {getTransactionIcon()}
               </div>
               <div>
-                <div className="text-white text-base font-medium">
+                <div
+                  className={`text-base font-medium ${
+                    transaction.type === "swap"
+                      ? "text-[#9f25b0]"
+                      : "text-[#35C2E2]"
+                  }`}
+                >
                   {getTransactionTitle()}
                 </div>
-                <div className="text-gray-400 text-sm">
+                <div className="text-gray-400 text-xs">
                   {formatDate(transaction.timestamp)}
                 </div>
               </div>
@@ -159,26 +168,26 @@ export default function TransactionDetailsModal({
           {/* Amount Display */}
           {transaction.type === "swap" && transaction.swapDetails ? (
             // Swap Amount Display
-            <div className="text-center mb-8">
+            <div className=" bg-[#0D1D2C]  border border-slate-600/30 rounded-2xl p-3 text-center mb-8">
               <div className="flex items-center justify-center gap-4 mb-2">
                 <div className="text-center">
-                  <div className="text-white text-xl font-medium">
+                  <div className="text-white text-lg font-medium">
                     {transaction.swapDetails.fromAmount.toFixed(
                       transaction.swapDetails.fromAmount < 1 ? 6 : 4
                     )}{" "}
                     {transaction.swapDetails.fromSymbol}
                   </div>
-                  <div className="text-gray-400 text-sm">Paid</div>
+                  <div className="text-gray-400 text-xs">Paid</div>
                 </div>
                 <div className="text-gray-400">→</div>
                 <div className="text-center">
-                  <div className="text-white text-xl font-medium">
+                  <div className="text-white text-lg font-medium">
                     {transaction.swapDetails.toAmount.toFixed(
                       transaction.swapDetails.toAmount < 1 ? 6 : 4
                     )}{" "}
                     {transaction.swapDetails.toSymbol}
                   </div>
-                  <div className="text-gray-400 text-sm">Received</div>
+                  <div className="text-gray-400 text-xs">Received</div>
                 </div>
               </div>
             </div>
@@ -189,16 +198,16 @@ export default function TransactionDetailsModal({
                 className={`text-3xl font-medium mb-2 ${
                   transaction.type === "receive"
                     ? "text-green-400"
-                    : "text-white"
+                    : "text-red-400"
                 }`}
               >
-                {transaction.type === "receive" ? "+ " : ""}
+                {transaction.type === "receive" ? "+ " : "-"}
                 {transaction.amount.toFixed(
                   transaction.amount < 1 ? 6 : 4
                 )}{" "}
                 {transaction.tokenSymbol}
               </div>
-              <div className="text-gray-400 text-base">
+              <div className="text-gray-400 text-sm">
                 {transaction.type === "receive" ? "Received" : "Sent"}
               </div>
             </div>
@@ -206,12 +215,12 @@ export default function TransactionDetailsModal({
 
           {/* Details Section */}
           <div className="mb-6">
-            <h3 className="text-white text-lg font-medium mb-4">Details</h3>
+            <h3 className="text-white text-base font-medium mb-4">Details</h3>
 
             {/* Fee */}
             <div className="flex justify-between items-center py-3 border-b border-gray-600/30">
-              <span className="text-gray-400 text-base">Fee</span>
-              <span className="text-white text-base">
+              <span className="text-gray-400 text-sm  ">Fee</span>
+              <span className="text-white text-sm">
                 {transaction.fee
                   ? `${transaction.fee.toFixed(6)} SOL`
                   : "0.0000 SOL"}
@@ -223,16 +232,16 @@ export default function TransactionDetailsModal({
               <>
                 {transaction.type === "receive" && (
                   <div className="flex justify-between items-center py-3 border-b border-gray-600/30">
-                    <span className="text-gray-400 text-base">From</span>
-                    <span className="text-white text-base font-mono">
+                    <span className="text-gray-400 text-sm">From</span>
+                    <span className="text-white text-sm font-mono">
                       {transaction.counterparty || "Unknown"}
                     </span>
                   </div>
                 )}
                 {transaction.type === "send" && (
                   <div className="flex justify-between items-center py-3 border-b border-gray-600/30">
-                    <span className="text-gray-400 text-base">To</span>
-                    <span className="text-white text-base font-mono">
+                    <span className="text-gray-400 text-sm">To</span>
+                    <span className="text-white text-sm font-mono">
                       {transaction.counterparty || "Unknown"}
                     </span>
                   </div>
@@ -242,9 +251,9 @@ export default function TransactionDetailsModal({
 
             {/* Signature */}
             <div className="flex justify-between items-center py-3 border-b border-gray-600/30">
-              <span className="text-gray-400 text-base">Signature</span>
+              <span className="text-gray-400 text-sm">Signature</span>
               <div className="flex items-center gap-2">
-                <span className="text-white text-base font-mono">
+                <span className="text-white text-sm font-mono">
                   {transaction.signature.slice(0, 6)}...
                   {transaction.signature.slice(-6)}
                 </span>
@@ -259,8 +268,8 @@ export default function TransactionDetailsModal({
 
             {/* Slot */}
             <div className="flex justify-between items-center py-3">
-              <span className="text-gray-400 text-base">Slot</span>
-              <span className="text-white text-base">
+              <span className="text-gray-400 text-sm">Slot</span>
+              <span className="text-white text-sm">
                 {transaction.slot || "Unknown"}
               </span>
             </div>
@@ -269,17 +278,17 @@ export default function TransactionDetailsModal({
           {/* View on Solscan Button */}
           <button
             onClick={() => openInSolscan(transaction.signature)}
-            className="w-full bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 py-4 rounded-2xl font-medium transition-colors flex items-center justify-center gap-2 mb-6"
+            className="w-full bg-[#0D1D2C] hover:bg-[#0D1D2C]/80 border border-[#0D1D2C] text-[#35C2E2] py-2 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 mb-6"
           >
             <ExternalLink size={18} />
             View on Solscan
           </button>
 
           {/* Instructions Section */}
-          <div className="flex justify-between items-center">
+          {/* <div className="flex justify-between items-center">
             <span className="text-white text-lg font-medium">Instructions</span>
             <button className="text-blue-400 text-base">Show</button>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
