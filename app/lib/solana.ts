@@ -67,7 +67,7 @@ async function rateLimitedRpcCall<T>(fn: () => Promise<T>): Promise<T> {
 
   lastRpcCall = Date.now();
 
-  // Retry logic for 429 errors
+  // Retry logic for 429 errors with longer delays
   let retries = 0;
   const maxRetries = 3;
 
@@ -77,7 +77,7 @@ async function rateLimitedRpcCall<T>(fn: () => Promise<T>): Promise<T> {
     } catch (error: any) {
       if (error?.message?.includes("429") || error?.status === 429) {
         retries++;
-        const delay = Math.min(1000 * Math.pow(2, retries), 5000); // Exponential backoff, max 5s
+        const delay = Math.min(2000 * Math.pow(2, retries), 10000); // Longer exponential backoff, max 10s
         console.warn(
           `Server responded with 429. Retrying after ${delay}ms delay...`
         );

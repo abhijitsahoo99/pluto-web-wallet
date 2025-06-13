@@ -5,7 +5,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import { useState, useMemo, useCallback } from "react";
 import WalletDashboard from "./components/WalletDashboard";
-import { ScanLine, Receipt } from "lucide-react";
+import { ScanLine, History } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -17,6 +17,8 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isNavigatingToTransactions, setIsNavigatingToTransactions] =
+    useState(false);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(sendAddress);
@@ -24,7 +26,7 @@ export default function Home() {
     setTimeout(() => setCopied(false), 1500);
   }, [sendAddress]);
 
-  // Navigate to transactions page
+  // Navigate to transactions page with loading state
   const handleTransactionsClick = useCallback(() => {
     router.push("/transactions");
   }, [router]);
@@ -180,21 +182,21 @@ export default function Home() {
 
         {/* Right Icons */}
         <div className="flex items-center gap-3">
-          {/* Transaction Icon */}
-          <button
-            className="w-10 h-10 flex items-center justify-center"
-            onClick={handleTransactionsClick}
-            aria-label="View transactions"
-          >
-            <Receipt size={28} stroke="white" strokeWidth={2} />
-          </button>
-
           {/* Scanner Icon */}
           <button
-            className="w-10 h-10 flex items-center justify-center"
+            className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-white/10 hover:scale-110 active:scale-95 active:bg-white/20"
             aria-label="Open scanner"
           >
             <ScanLine size={28} stroke="white" strokeWidth={2} />
+          </button>
+
+          {/* Transaction Icon */}
+          <button
+            className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-white/10 hover:scale-110 active:scale-95 active:bg-white/20"
+            onClick={handleTransactionsClick}
+            aria-label="View transactions"
+          >
+            <History size={28} stroke="white" strokeWidth={2} />
           </button>
         </div>
       </nav>

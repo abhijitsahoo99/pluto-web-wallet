@@ -13,11 +13,14 @@ export default function TransactionsPage() {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
 
   // Get wallet address
   const walletAddress = useMemo(() => {
@@ -33,7 +36,7 @@ export default function TransactionsPage() {
     return (solanaWallet as any)?.address || "";
   }, [user?.linkedAccounts]);
 
-  // Fetch transactions
+  // Fetch transactions (first page)
   const fetchTransactions = useCallback(
     async (forceRefresh = false) => {
       if (!walletAddress) return;
@@ -44,8 +47,12 @@ export default function TransactionsPage() {
         if (forceRefresh) {
           setIsRefreshing(true);
         }
-        const txData = await getWalletTransactions(walletAddress);
-        setTransactions(txData);
+        const result = await getWalletTransactions(walletAddress, {
+          limit: 15,
+        });
+        setTransactions(result.transactions);
+        setHasMore(result.hasMore);
+        setNextCursor(result.nextCursor);
       } catch (err) {
         console.error("Error fetching transactions:", err);
         setError("Failed to fetch transactions");
@@ -56,6 +63,28 @@ export default function TransactionsPage() {
     },
     [walletAddress]
   );
+
+  // Load more transactions
+  const loadMoreTransactions = useCallback(async () => {
+    if (!walletAddress || !nextCursor || loadingMore) return;
+
+    try {
+      setLoadingMore(true);
+      const result = await getWalletTransactions(walletAddress, {
+        limit: 15,
+        before: nextCursor,
+      });
+
+      setTransactions((prev) => [...prev, ...result.transactions]);
+      setHasMore(result.hasMore);
+      setNextCursor(result.nextCursor);
+    } catch (err) {
+      console.error("Error loading more transactions:", err);
+      setError("Failed to load more transactions");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [walletAddress, nextCursor, loadingMore]);
 
   useEffect(() => {
     if (walletAddress) {
@@ -85,7 +114,7 @@ export default function TransactionsPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#35C2E2] mb-4"></div>
-        <p className="text-white/70 text-lg">Initializing...</p>
+        {/* <p className="text-white/70 text-lg">Initializing...</p> */}
       </div>
     );
   }
@@ -98,12 +127,9 @@ export default function TransactionsPage() {
 
   return (
     <>
-      <div
-        className="h-screen w-full bg-cover bg-center flex flex-col"
-        style={{ backgroundImage: "url('/background.jpg')" }}
-      >
+      <div className="h-screen w-full bg-[#000000] flex flex-col">
         {/* Header */}
-        <div className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
+        <div className="fixed top-0 left-0 right-0 z-50">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={handleBack}
@@ -112,7 +138,7 @@ export default function TransactionsPage() {
             >
               <ArrowLeft size={24} stroke="white" strokeWidth={2} />
             </button>
-            <h1 className="text-white text-lg font-medium">Transactions</h1>
+            <h1 className="text-white text-lg font-medium">All Transactions</h1>
             <div className="w-10" /> {/* Spacer for centering */}
           </div>
         </div>
@@ -120,13 +146,13 @@ export default function TransactionsPage() {
         {/* Content Container - Fixed height with proper scrolling */}
         <div className="flex-1 flex flex-col pt-16 overflow-hidden">
           {/* Header Section - Fixed height */}
-          <div className="flex-shrink-0 px-4 py-6">
+          {/* <div className="flex-shrink-0 px-4 py-6">
             <div className="max-w-sm mx-auto">
               <h2 className="text-white text-xl font-medium mb-4">
                 All Transactions
               </h2>
             </div>
-          </div>
+          </div> */}
 
           {/* Scrollable Transactions List - Takes remaining space */}
           <div className="flex-1 overflow-y-auto px-4 pb-safe">
@@ -186,7 +212,7 @@ export default function TransactionsPage() {
                     </div>
                   </div>
 
-                  {/* Transaction list with generous bottom spacing */}
+                  {/* Transaction list with Load More button */}
                   <div className="space-y-3 pb-32">
                     {transactions.map((transaction) => (
                       <TransactionCard
@@ -195,6 +221,36 @@ export default function TransactionsPage() {
                         onClick={handleTransactionClick}
                       />
                     ))}
+
+                    {/* Load More Button */}
+                    {hasMore && (
+                      <div className="pt-4">
+                        <button
+                          onClick={loadMoreTransactions}
+                          disabled={loadingMore}
+                          className="w-full py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMore ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                              Loading more...
+                            </div>
+                          ) : (
+                            "Load More Transactions"
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* End of transactions indicator */}
+                    {!hasMore && transactions.length > 0 && (
+                      <div className="pt-4 text-center">
+                        <p className="text-white/50 text-sm">
+                          All transactions loaded
+                        </p>
+                      </div>
+                    )}
+
                     {/* Extra spacer to ensure last item is fully visible */}
                     <div className="h-16"></div>
                   </div>

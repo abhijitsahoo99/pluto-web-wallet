@@ -32,7 +32,7 @@ export default function TransactionCard({
       case "swap":
         return (
           <div className="w-10 h-10 rounded-full bg-slate-600/60 flex items-center justify-center">
-            <RefreshCw size={18} className="text-purple-400" />
+            <RefreshCw size={18} className="text-cyan-400" />
           </div>
         );
       default:
@@ -51,10 +51,15 @@ export default function TransactionCard({
       case "receive":
         return `Received from ${transaction.counterparty || "Unknown"}`;
       case "swap":
-        if (transaction.swapDetails) {
+        if (
+          transaction.swapDetails &&
+          transaction.swapDetails.fromSymbol &&
+          transaction.swapDetails.toSymbol
+        ) {
           return `Swapped ${transaction.swapDetails.fromSymbol} → ${transaction.swapDetails.toSymbol}`;
         }
-        return "Swapped tokens";
+        // Fallback for incomplete swap details
+        return `Swapped ${transaction.tokenSymbol}`;
       default:
         return "Transaction";
     }
@@ -64,16 +69,16 @@ export default function TransactionCard({
     if (transaction.type === "swap" && transaction.swapDetails) {
       const fromAmount = transaction.swapDetails.fromAmount || 0;
       const toAmount = transaction.swapDetails.toAmount || 0;
+      const fromSymbol = transaction.swapDetails.fromSymbol || "Unknown";
+      const toSymbol = transaction.swapDetails.toSymbol || "Unknown";
 
       return (
         <div className="text-right">
-          <div className="text-sm font-medium text-red-400">
-            - {fromAmount.toFixed(fromAmount < 1 ? 6 : 4)}{" "}
-            {transaction.swapDetails.fromSymbol}
+          <div className="text-sm font-normal text-red-400">
+            - {fromAmount.toFixed(fromAmount < 1 ? 6 : 4)} {fromSymbol}
           </div>
-          <div className="text-sm font-medium text-green-400 mt-0.5">
-            + {toAmount.toFixed(toAmount < 1 ? 6 : 4)}{" "}
-            {transaction.swapDetails.toSymbol}
+          <div className="text-sm font-normal text-green-400 mt-0.5">
+            + {toAmount.toFixed(toAmount < 1 ? 6 : 4)} {toSymbol}
           </div>
         </div>
       );
@@ -86,7 +91,7 @@ export default function TransactionCard({
 
     return (
       <div className="text-right">
-        <div className={`text-sm font-medium ${color}`}>
+        <div className={`text-sm font-normal ${color}`}>
           {prefix}
           {amount.toFixed(amount < 1 ? 6 : 4)}
         </div>
@@ -106,7 +111,7 @@ export default function TransactionCard({
   return (
     <button
       onClick={handleClick}
-      className="w-full bg-slate-700/40 backdrop-blur-sm border border-slate-600/30 rounded-2xl p-4 flex items-center justify-between hover:bg-slate-700/60 transition-colors"
+      className="w-full bg-[#16303e] rounded-2xl p-4 flex items-center justify-between hover:bg-[#16303e]/60 transition-colors"
     >
       {/* Left side - Icon and details */}
       <div className="flex items-center gap-3">
