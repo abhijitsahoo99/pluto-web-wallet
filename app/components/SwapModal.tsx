@@ -57,12 +57,8 @@ const TokenSelector = ({
       onClick={onClose}
     >
       <div
-        className="fixed bottom-0 left-0 right-0 bg-black/20 backdrop-blur-xl border border-white/10 rounded-t-3xl max-h-[70vh] overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 42, 58, 0.95) 50%, rgba(36, 49, 66, 0.95) 100%)",
-          backdropFilter: "blur(20px)",
-        }}
+        className="fixed bottom-0 left-0 right-0 bg-[#16303e] border border-white/10 rounded-t-3xl max-h-[70vh] overflow-hidden"
+        style={{}}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 border-b border-white/10">
@@ -531,27 +527,23 @@ export default function SwapModal({
         onClick={handleBackdropClick}
       >
         <div
-          className={`fixed bottom-0 left-0 right-0 rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
+          className={`fixed bottom-0 left-0 right-0 bg-[#0D0F1C] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
             isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
           }`}
           style={{
             maxHeight: "95vh",
-            background:
-              "linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 42, 58, 0.95) 50%, rgba(36, 49, 66, 0.95) 100%)",
-            backdropFilter: "blur(20px)",
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-white/10">
+          <div className="flex items-center p-4 border-b border-white/10 relative">
+            <h2 className="text-white text-lg font-medium absolute left-1/2 transform -translate-x-1/2">
+              Swap
+            </h2>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-white transition-colors ml-auto"
             >
               <X size={24} />
-            </button>
-            <h2 className="text-white text-lg font-medium">Swap</h2>
-            <button className="text-gray-400 hover:text-white transition-colors">
-              <RotateCcw size={20} />
             </button>
           </div>
 
@@ -559,103 +551,108 @@ export default function SwapModal({
             className="overflow-y-auto p-4 space-y-3"
             style={{ maxHeight: "calc(95vh - 120px)" }}
           >
-            {/* Swap Cards */}
-            <div className="relative">
-              {/* You Pay Card */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-0">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-xs">You Pay</span>
-                  <span className="text-white text-lg font-medium">
-                    {amount || "0"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => setIsFromSelectorOpen(true)}
-                    className="flex items-center gap-2 hover:bg-white/5 rounded-xl p-1 transition-colors"
-                  >
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
-                      {fromToken.logoUri ? (
-                        <img
-                          src={fromToken.logoUri}
-                          alt={fromToken.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="text-white font-bold text-xs">
-                          {fromToken.name.charAt(0)}
+            {/* Swap Cards Container */}
+            <div className="bg-[#0C1F2D] rounded-2xl p-3 border border-white/10">
+              <div className="relative">
+                {/* You Pay Card */}
+                <div className="bg-[#16303e] border border-white/10 rounded-xl p-3 mb-4">
+                  <div className="flex items-center justify-between">
+                    {/* Left side - Token info */}
+                    <button
+                      onClick={() => setIsFromSelectorOpen(true)}
+                      className="flex items-center gap-2 hover:bg-white/5 rounded-lg p-1 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+                        {fromToken.logoUri ? (
+                          <img
+                            src={fromToken.logoUri}
+                            alt={fromToken.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-white font-bold text-xs">
+                            {fromToken.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <div className="text-white font-bold text-base">
+                          {fromToken.symbol}
                         </div>
-                      )}
-                    </div>
-                    <div className="text-left">
-                      <div className="text-white font-medium text-sm">
-                        {fromToken.symbol}
+                        <div className="text-gray-400 text-xs">
+                          Balance: {fromToken.balance.toFixed(6)}...
+                        </div>
+                      </div>
+                      <ChevronDown size={14} className="text-gray-400" />
+                    </button>
+
+                    {/* Right side - You Pay label and amount */}
+                    <div className="text-right">
+                      <div className="text-gray-400 text-xs mb-1">You Pay</div>
+                      <div className="text-white text-lg font-bold">
+                        {amount || "0"}
                       </div>
                       <div className="text-gray-400 text-xs">
-                        Balance: {fromToken.balance.toLocaleString()}{" "}
-                        {fromToken.symbol}
+                        {fromTokenUsdValue > 0
+                          ? `$${fromTokenUsdValue.toFixed(2)}`
+                          : "$0.00"}
                       </div>
-                    </div>
-                    <ChevronDown size={14} className="text-gray-400" />
-                  </button>
-                  <div className="text-right">
-                    <div className="text-gray-400 text-xs">
-                      {fromTokenUsdValue > 0
-                        ? `$${fromTokenUsdValue.toFixed(2)}`
-                        : "—"}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Swap Button - Positioned to overlap the border */}
-              <div className="flex justify-center relative z-10 -my-4">
-                <button
-                  onClick={handleSwapTokens}
-                  className="w-10 h-10 bg-gray-800 border-2 border-gray-600 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors shadow-lg"
-                >
-                  <ArrowUpDown size={16} className="text-white" />
-                </button>
-              </div>
-
-              {/* You Receive Card */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3 mt-0">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-xs">You Receive</span>
-                  <span className="text-green-400 text-lg font-medium">
-                    +{outputAmount}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
+                {/* Swap Button - Positioned to overlap both cards */}
+                <div className="flex justify-center relative z-10 -my-4">
                   <button
-                    onClick={() => setIsToSelectorOpen(true)}
-                    className="flex items-center gap-2 hover:bg-white/5 rounded-xl p-1 transition-colors"
+                    onClick={handleSwapTokens}
+                    className="w-8 h-8 bg-gray-800 border-2 border-gray-600 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors shadow-lg"
                   >
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
-                      {toToken.logoUri ? (
-                        <img
-                          src={toToken.logoUri}
-                          alt={toToken.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="text-white font-bold text-xs">
-                          {toToken.name.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-left">
-                      <div className="text-white font-medium text-sm">
-                        {toToken.symbol}
-                      </div>
-                    </div>
-                    <ChevronDown size={14} className="text-gray-400" />
+                    <ArrowUpDown size={14} className="text-white" />
                   </button>
-                  <div className="text-right">
-                    <div className="text-gray-400 text-xs">
-                      {toTokenUsdValue > 0
-                        ? `$${toTokenUsdValue.toFixed(2)}`
-                        : "—"}
+                </div>
+
+                {/* You Receive Card */}
+                <div className="bg-[#16303e] border border-white/10 rounded-xl p-3">
+                  <div className="flex items-center justify-between">
+                    {/* Left side - Token info */}
+                    <button
+                      onClick={() => setIsToSelectorOpen(true)}
+                      className="flex items-center gap-2 hover:bg-white/5 rounded-lg p-1 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
+                        {toToken.logoUri ? (
+                          <img
+                            src={toToken.logoUri}
+                            alt={toToken.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-white font-bold text-xs">
+                            {toToken.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <div className="text-white font-bold text-base">
+                          {toToken.symbol}
+                        </div>
+                      </div>
+                      <ChevronDown size={14} className="text-gray-400" />
+                    </button>
+
+                    {/* Right side - You Receive label and amount */}
+                    <div className="text-right">
+                      <div className="text-gray-400 text-xs mb-1">
+                        You Receive
+                      </div>
+                      <div className="text-[#35C2E2] text-lg font-bold">
+                        +{outputAmount}
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        {toTokenUsdValue > 0
+                          ? `$${toTokenUsdValue.toFixed(2)}`
+                          : "$0.00"}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -665,7 +662,7 @@ export default function SwapModal({
             {/* Swap Details */}
             <button
               onClick={() => setIsSwapDetailsOpen(!isSwapDetailsOpen)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center justify-between hover:bg-white/10 transition-colors"
+              className="w-full bg-[#0c1f2d] border border-white/10 rounded-2xl p-3 flex items-center justify-between hover:bg-[#0c1f2d]/80 transition-colors"
             >
               <span className="text-white font-medium text-sm">
                 Swap Details
@@ -679,7 +676,7 @@ export default function SwapModal({
             </button>
 
             {isSwapDetailsOpen && (
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-3 space-y-2">
+              <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-3 space-y-2">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-400">Rate</span>
                   <span className="text-white">

@@ -117,7 +117,7 @@ export default function TransactionDetailsModal({
       >
         {/* Header */}
         <div className="flex items-center justify-center p-4 border-b border-white/10 relative">
-          <div className="w-12 h-1 bg-white/20 rounded-full absolute top-4" />
+          <div className="w-12  bg-white/20 rounded-full absolute top-4" />
           <button
             onClick={handleClose}
             className="absolute right-6 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors"

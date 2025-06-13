@@ -192,40 +192,37 @@ export default function ReceiveModal({
       onClick={handleBackdropClick}
     >
       <div
-        className={`fixed bottom-0 left-0 right-0 rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
+        className={`fixed bottom-0 left-0 right-0 bg-[#16303e] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
           isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
           maxHeight: "90vh",
-          background:
-            "linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 42, 58, 0.95) 50%, rgba(36, 49, 66, 0.95) 100%)",
-          backdropFilter: "blur(20px)",
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-center p-6 border-b border-white/10 relative">
-          <div className="w-12 h-1 bg-white/20 rounded-full absolute top-3" />
+        <div className="flex items-center justify-center p-4 border-b border-white/10 relative">
+          <div className="w-12 bg-white/20 rounded-full absolute" />
           <h2 className="text-white text-lg font-medium">Receive Funds</h2>
           <button
             onClick={handleClose}
-            className="absolute right-6 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+            className="absolute right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
         <div
-          className="overflow-y-auto p-6 space-y-6"
+          className="overflow-y-auto p-4 space-y-6"
           style={{ maxHeight: "calc(90vh - 120px)" }}
         >
           {/* QR Code */}
           <div className="flex flex-col items-center">
-            <div className="bg-white rounded-2xl p-4 mb-4">
+            <div className="bg-white rounded-2xl p-2 mb-4">
               {qrCodeUrl ? (
                 <img
                   src={qrCodeUrl}
                   alt="Wallet QR Code"
-                  className="w-64 h-64"
+                  className="w-60 h-60"
                 />
               ) : (
                 <div className="w-64 h-64 bg-gray-200 rounded-xl flex items-center justify-center">
@@ -234,7 +231,7 @@ export default function ReceiveModal({
               )}
             </div>
 
-            <p className="text-gray-400 text-sm text-center max-w-xs">
+            <p className="text-gray-400 text-xs text-center max-w-xs">
               Scan this QR code to receive SOL and SPL tokens
             </p>
           </div>
@@ -244,8 +241,8 @@ export default function ReceiveModal({
             <label className="block text-white font-normal text-sm mb-2">
               Wallet Address
             </label>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-              <p className="text-white text-sm font-mono text-center">
+            <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-4">
+              <p className="text-white text-base font-mono text-center">
                 {truncatedAddress}
               </p>
             </div>
@@ -258,7 +255,7 @@ export default function ReceiveModal({
               className={`flex-1 py-3 rounded-2xl font-normal transition-all text-sm flex items-center justify-center gap-2 ${
                 copySuccess
                   ? "bg-green-500 text-white"
-                  : "bg-white/10 text-white hover:bg-white/15"
+                  : "bg-[#0c1f2d] text-white hover:bg-[#0c1f2d]/80"
               }`}
             >
               <Copy size={16} />
@@ -274,7 +271,7 @@ export default function ReceiveModal({
           </div>
 
           {/* Security Notice */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
+          <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-4 flex items-center justify-center gap-3">
             <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
               <Check size={12} className="text-white" />
             </div>

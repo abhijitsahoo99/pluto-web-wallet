@@ -528,19 +528,16 @@ export default function SendModal({
         onClick={handleBackdropClick}
       >
         <div
-          className={`fixed bottom-0 left-0 right-0 rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
+          className={`fixed bottom-0 left-0 right-0 bg-[#16303e] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
             isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
           }`}
           style={{
             maxHeight: "90vh",
-            background:
-              "linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 42, 58, 0.95) 50%, rgba(36, 49, 66, 0.95) 100%)",
-            backdropFilter: "blur(20px)",
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-center p-6 border-b border-white/10 relative">
-            <div className="w-12 h-1 bg-white/20 rounded-full absolute top-3" />
+          <div className="flex items-center justify-center p-4 border-b border-white/10 relative">
+            <div className="w-12 bg-white/20 rounded-full absolute " />
             <h2 className="text-white text-lg font-medium">
               Send {selectedToken.symbol}
             </h2>
@@ -632,7 +629,7 @@ export default function SendModal({
                 </label>
                 <button
                   onClick={() => setAmount(selectedToken.balance.toString())}
-                  className="text-[#35C2E2] font-normal hover:text-[#35C2E2]/80 transition-colors text-sm"
+                  className="py-1 px-3 bg-white/5 border border-white/10 rounded-xl text-white font-normal hover:text-white/80 transition-colors text-sm"
                 >
                   MAX
                 </button>
@@ -657,7 +654,7 @@ export default function SendModal({
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="0"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#35C2E2] transition-colors text-center text-sm font-normal caret-white h-10"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#35C2E2] transition-colors text-center text-sm font-normal caret-white h-12"
                 style={{ fontSize: "16px" }} // Prevents zoom on iOS
               />
               {amount && parseFloat(amount) > selectedToken.balance && (
@@ -678,7 +675,7 @@ export default function SendModal({
             <div className="flex gap-4 pt-4">
               <button
                 onClick={handleClose}
-                className="flex-1 py-3 bg-white/10 text-white rounded-2xl font-normal hover:bg-white/15 transition-colors text-sm"
+                className="flex-1 py-3 bg-[#0c1f2d] text-white rounded-2xl font-normal hover:bg-[#0c1f2d]/80 transition-colors text-sm"
               >
                 Cancel
               </button>

@@ -118,10 +118,12 @@ function TokenCard({
 
         {/* Token details - Reduced font size and weight */}
         <div className="flex flex-col">
-          <div className="text-white font-medium text-base leading-tight">
+          <div className="text-white font-medium text-base leading-tight text-left">
             {symbol}
           </div>
-          <div className="text-gray-400 text-sm mt-0.5">{formattedPrice}</div>
+          <div className="text-gray-400 text-sm mt-0.5 text-left">
+            {formattedPrice}
+          </div>
         </div>
       </div>
 
