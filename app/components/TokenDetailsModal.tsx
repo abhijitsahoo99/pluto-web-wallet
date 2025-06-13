@@ -165,14 +165,11 @@ export default function TokenDetailsModal({
       onClick={handleBackdropClick}
     >
       <div
-        className={`fixed bottom-0 left-0 right-0 rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
+        className={`fixed bottom-0 left-0 right-0 bg-[#0D0F1C] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
           isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
           maxHeight: "80vh",
-          background:
-            "linear-gradient(135deg, rgba(26, 35, 50, 0.95) 0%, rgba(30, 42, 58, 0.95) 50%, rgba(36, 49, 66, 0.95) 100%)",
-          backdropFilter: "blur(20px)",
         }}
       >
         {/* Sticky Header */}
@@ -238,12 +235,12 @@ export default function TokenDetailsModal({
             <div className="p-4 space-y-4">
               {/* Current Price - Left aligned */}
               <div className="text-left">
-                <div className="text-white text-lg font-normal mb-1">
+                <div className="text-white text-3xl font-bold mb-2">
                   {formatCurrency(analytics.details.price)}
                 </div>
                 <div className="flex items-center gap-2">
                   <div
-                    className={`text-xs ${
+                    className={`text-sm ${
                       isPositiveChange ? "text-green-400" : "text-red-400"
                     }`}
                   >
@@ -251,7 +248,7 @@ export default function TokenDetailsModal({
                     {priceChange.toFixed(2)}%
                   </div>
                   <div
-                    className={`px-2 py-0.5 rounded text-xs ${
+                    className={`px-2 py-0.5 rounded-xl text-sm ${
                       isPositiveChange
                         ? "bg-green-500/20 text-green-400"
                         : "bg-red-500/20 text-red-400"
@@ -297,7 +294,7 @@ export default function TokenDetailsModal({
                 </div>
 
                 {/* Time Frame Selector */}
-                <div className="flex bg-slate-700/60 rounded-lg p-1">
+                <div className="flex bg-[#051018] rounded-lg p-1">
                   {(["1H", "1D", "1W", "1M", "YTD", "ALL"] as TimeFrame[]).map(
                     (timeframe) => (
                       <button
@@ -305,7 +302,7 @@ export default function TokenDetailsModal({
                         onClick={() => setSelectedTimeFrame(timeframe)}
                         className={`flex-1 py-1.5 px-2 rounded-md text-xs font-normal transition-colors ${
                           selectedTimeFrame === timeframe
-                            ? "bg-slate-600 text-white"
+                            ? "bg-[#11232F] text-white"
                             : "text-gray-400 hover:text-white"
                         }`}
                       >
@@ -317,11 +314,11 @@ export default function TokenDetailsModal({
               </div>
 
               {/* Security Analysis */}
-              <div>
-                <h4 className="text-white text-sm font-medium mb-3">
-                  Security Analysis
-                </h4>
+              <h4 className="text-white text-xl font-medium mb-3">
+                Security Analysis
+              </h4>
 
+              <div className="mt-6 bg-[#0C1F2D] rounded-xl p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -332,12 +329,12 @@ export default function TokenDetailsModal({
                         : "bg-red-500"
                     }`}
                   >
-                    <span className="text-white font-medium text-xs">
+                    <span className="text-white font-medium text-sm">
                       {analytics.security.riskScore}
                     </span>
                   </div>
                   <div
-                    className={`text-sm font-normal ${
+                    className={`text-base font-medium ${
                       analytics.security.riskLevel === "Low Risk"
                         ? "text-green-400"
                         : analytics.security.riskLevel === "Medium Risk"
@@ -350,7 +347,7 @@ export default function TokenDetailsModal({
                 </div>
 
                 <div className="bg-slate-800/40 rounded-xl p-3 mb-4">
-                  <h5 className="text-white text-xs font-medium mb-2">
+                  <h5 className="text-white text-base font-medium mb-2">
                     Security Analysis
                   </h5>
                   <p className="text-gray-400 text-xs leading-relaxed">
@@ -360,10 +357,10 @@ export default function TokenDetailsModal({
 
                 {/* Top Holders - Generate realistic data based on token metrics */}
                 <div className="mb-4">
-                  <h5 className="text-white text-sm font-medium mb-1">
+                  <h5 className="text-white text-base font-medium mb-1">
                     Top Holders
                   </h5>
-                  <p className="text-gray-400 text-xs mb-3">
+                  <p className="text-gray-400 text-sm mb-3">
                     Total Holders:{" "}
                     {formatLargeNumber(
                       Math.max(
@@ -433,41 +430,40 @@ export default function TokenDetailsModal({
               </div>
 
               {/* Info Section */}
-              <div>
-                <h4 className="text-white text-sm font-medium mb-3">Info</h4>
-
+              <div className="mt-6 bg-[#0C1F2D] rounded-xl p-4">
+              <h4 className="text-white text-xl font-medium mb-3">Info</h4>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Liquidity</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Liquidity</div>
+                    <div className="text-white text-base font-medium">
                       {formatCurrency(analytics.details.liquidity)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Status</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Status</div>
+                    <div className="text-white text-base font-medium">
                       {analytics.details.status}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Mint</div>
-                    <div className="text-white text-sm font-normal font-mono">
+                    <div className="text-gray-400 text-sm mb-1">Mint</div>
+                    <div className="text-white text-base font-medium font-mono">
                       {shortenAddress(analytics.details.mint)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Market Cap</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Market Cap</div>
+                    <div className="text-white text-base font-medium">
                       {analytics.details.marketCap
                         ? formatCurrency(analytics.details.marketCap)
                         : "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">
+                      <div className="text-gray-400 text-sm mb-1">
                       Circulating Supply
                     </div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-white text-base font-medium">
                       {formatLargeNumber(
                         analytics.details.marketCap &&
                           analytics.details.price > 0
@@ -478,8 +474,8 @@ export default function TokenDetailsModal({
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Holders</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Holders</div>
+                    <div className="text-white text-base font-medium">
                       {formatLargeNumber(
                         Math.max(
                           analytics.tradeData.buys24h +
@@ -493,21 +489,21 @@ export default function TokenDetailsModal({
               </div>
 
               {/* 24h Performance */}
-              <div className="mb-6">
-                <h4 className="text-white text-sm font-medium mb-3">
+              <div className="mt-6 bg-[#0C1F2D] rounded-xl p-4">
+                <h4 className="text-white text-xl font-medium mb-3">
                   24h Performance
                 </h4>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Volume</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Volume</div>
+                    <div className="text-white text-base font-medium">
                       {formatCurrency(analytics.tradeData.volume24h)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Trades</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Trades</div>
+                    <div className="text-white text-base font-medium">
                       {(
                         analytics.tradeData.buys24h +
                         analytics.tradeData.sells24h
@@ -515,26 +511,26 @@ export default function TokenDetailsModal({
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">Buy Volume</div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-gray-400 text-sm mb-1">Buy Volume</div>
+                    <div className="text-white text-base font-medium">
                       {formatCurrency(analytics.tradeData.volume24h * 0.45)}{" "}
                       {/* Estimate 45% buy volume */}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">
+                    <div className="text-gray-400 text-sm mb-1">
                       Sell Volume
                     </div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-white text-base font-medium">
                       {formatCurrency(analytics.tradeData.volume24h * 0.55)}{" "}
                       {/* Estimate 55% sell volume */}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">
+                    <div className="text-gray-400 text-sm mb-1">
                       Unique Wallets
                     </div>
-                    <div className="text-white text-sm font-normal">
+                    <div className="text-white text-base font-medium">
                       {Math.max(
                         Math.floor(
                           (analytics.tradeData.buys24h +
@@ -546,10 +542,10 @@ export default function TokenDetailsModal({
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-xs mb-1">
+                    <div className="text-gray-400 text-sm mb-1">
                       Wallet Change
                     </div>
-                    <div className="text-[#35C2E2] text-sm font-normal">
+                    <div className="text-[#35C2E2] text-sm font-medium">
                       {analytics.isDataAvailable
                         ? `+${Math.floor(Math.random() * 20 + 5)}`
                         : "N/A"}
