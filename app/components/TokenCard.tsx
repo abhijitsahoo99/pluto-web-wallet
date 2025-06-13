@@ -7,6 +7,8 @@ interface TokenCardProps {
   priceUsd: number;
   valueUsd: number;
   logoUri?: string;
+  mint?: string;
+  onClick?: (mint: string, symbol: string) => void;
 }
 
 function TokenCard({
@@ -16,6 +18,8 @@ function TokenCard({
   priceUsd,
   valueUsd,
   logoUri,
+  mint,
+  onClick,
 }: TokenCardProps) {
   // Memoize formatted values to prevent re-computation on every render
   const formattedBalance = useMemo(() => {
@@ -49,13 +53,17 @@ function TokenCard({
     const numPrice = Number(priceUsd);
     if (!priceUsd || !isFinite(numPrice) || numPrice <= 0) return "$0.00";
 
-    // For very small numbers, use scientific notation like reference
+    // For very small numbers, use scientific notation
     if (numPrice < 0.000001) {
       return `$${numPrice.toExponential(2)}`;
     }
-    if (numPrice < 0.01) return "< $0.01";
-    if (numPrice < 1) return `$${numPrice.toFixed(4)}`;
 
+    // For small prices, show more decimals to avoid showing $0.00
+    if (numPrice < 0.01) {
+      return `$${numPrice.toFixed(4)}`;
+    }
+
+    // For prices >= $0.01, show 2 decimal places
     return `$${numPrice.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -73,8 +81,14 @@ function TokenCard({
     })}`;
   }, [valueUsd]);
 
-  return (
-    <div className="flex items-center justify-between px-6 py-5">
+  const handleClick = () => {
+    if (onClick && mint) {
+      onClick(mint, symbol);
+    }
+  };
+
+  const CardContent = (
+    <>
       {/* Left side - Token info */}
       <div className="flex items-center gap-4">
         {/* Token logo - Made smaller */}
@@ -118,6 +132,24 @@ function TokenCard({
         </div>
         <div className="text-gray-400 text-sm mt-0.5">{formattedBalance}</div>
       </div>
+    </>
+  );
+
+  // If onClick is provided, render as button, otherwise as div
+  if (onClick && mint) {
+    return (
+      <button
+        onClick={handleClick}
+        className="flex items-center justify-between px-6 py-5 w-full hover:bg-white/5 transition-colors"
+      >
+        {CardContent}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between px-6 py-5">
+      {CardContent}
     </div>
   );
 }

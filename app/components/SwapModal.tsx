@@ -12,6 +12,7 @@ interface SwapModalProps {
   solBalance: number;
   tokens: TokenHolding[];
   walletAddress: string;
+  defaultFromToken?: string;
 }
 
 interface SwapToken {
@@ -167,6 +168,7 @@ export default function SwapModal({
   solBalance,
   tokens,
   walletAddress,
+  defaultFromToken,
 }: SwapModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [fromToken, setFromToken] = useState<SwapToken>({
@@ -229,6 +231,39 @@ export default function SwapModal({
     fromToken.isSOL,
     toToken.isSOL,
   ]);
+
+  // Set default from token when modal opens
+  useEffect(() => {
+    if (isOpen && defaultFromToken) {
+      if (defaultFromToken === "So11111111111111111111111111111111111111112") {
+        // SOL
+        setFromToken({
+          mint: "So11111111111111111111111111111111111111112",
+          name: "SOL",
+          symbol: "SOL",
+          balance: solBalance,
+          logoUri:
+            "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+          decimals: 9,
+          isSOL: true,
+        });
+      } else {
+        // Find the token in the tokens array
+        const token = tokens.find((t) => t.mint === defaultFromToken);
+        if (token) {
+          setFromToken({
+            mint: token.mint,
+            name: token.name || "Unknown Token",
+            symbol: token.symbol || token.mint.slice(0, 6),
+            balance: token.uiAmount,
+            logoUri: token.logoUri,
+            decimals: token.decimals || 6,
+            isSOL: false,
+          });
+        }
+      }
+    }
+  }, [isOpen, defaultFromToken, solBalance, tokens]);
 
   useEffect(() => {
     if (isOpen) {

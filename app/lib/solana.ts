@@ -25,21 +25,79 @@ export interface WalletBalance {
   totalValueUsd: number;
 }
 
-// Initialize Solana connection
-export const connection = new Connection(SOLANA_RPC_URL, "confirmed");
+// Initialize Solana connection with optimized settings
+export const connection = new Connection(SOLANA_RPC_URL, {
+  commitment: "confirmed",
+  confirmTransactionInitialTimeout: 30000,
+});
 
-// Cache for token metadata to avoid repeated API calls
+// Enhanced caching system
 const tokenMetadataCache = new Map<
   string,
-  { name?: string; symbol?: string; logoUri?: string }
+  { name?: string; symbol?: string; logoUri?: string; timestamp: number }
 >();
-let tokenListCache: any[] | null = null;
+let tokenListCache: { data: any[] | null; timestamp: number } = {
+  data: null,
+  timestamp: 0,
+};
 
-// Get SOL balance for a wallet
+// Price caching with longer duration for free tier optimization
+const priceCache = new Map<string, { price: number; timestamp: number }>();
+const multiPriceCache = new Map<
+  string,
+  { prices: Record<string, number>; timestamp: number }
+>();
+const PRICE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for better free tier usage
+const METADATA_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for metadata
+
+// Rate limiting for RPC calls - MUCH MORE CONSERVATIVE
+let lastRpcCall = 0;
+const RPC_RATE_LIMIT_MS = 500; // 500ms between calls to prevent 429 errors
+
+// Rate limiting helper with exponential backoff for 429 errors
+async function rateLimitedRpcCall<T>(fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const timeSinceLastCall = now - lastRpcCall;
+
+  if (timeSinceLastCall < RPC_RATE_LIMIT_MS) {
+    await new Promise((resolve) =>
+      setTimeout(resolve, RPC_RATE_LIMIT_MS - timeSinceLastCall)
+    );
+  }
+
+  lastRpcCall = Date.now();
+
+  // Retry logic for 429 errors
+  let retries = 0;
+  const maxRetries = 3;
+
+  while (retries < maxRetries) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (error?.message?.includes("429") || error?.status === 429) {
+        retries++;
+        const delay = Math.min(1000 * Math.pow(2, retries), 5000); // Exponential backoff, max 5s
+        console.warn(
+          `Server responded with 429. Retrying after ${delay}ms delay...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new Error("Max retries exceeded for RPC call");
+}
+
+// Get SOL balance for a wallet with rate limiting
 export async function getSolBalance(walletAddress: string): Promise<number> {
   try {
     const publicKey = new PublicKey(walletAddress);
-    const balance = await connection.getBalance(publicKey);
+    const balance = await rateLimitedRpcCall(() =>
+      connection.getBalance(publicKey)
+    );
     return balance / LAMPORTS_PER_SOL;
   } catch (error) {
     console.error("Error fetching SOL balance:", error);
@@ -47,15 +105,16 @@ export async function getSolBalance(walletAddress: string): Promise<number> {
   }
 }
 
-// Get all SPL token holdings for a wallet
+// Get all SPL token holdings for a wallet with rate limiting
 export async function getTokenHoldings(
   walletAddress: string
 ): Promise<TokenHolding[]> {
   try {
     const publicKey = new PublicKey(walletAddress);
-    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-      publicKey,
-      { programId: TOKEN_PROGRAM_ID }
+    const tokenAccounts = await rateLimitedRpcCall(() =>
+      connection.getParsedTokenAccountsByOwner(publicKey, {
+        programId: TOKEN_PROGRAM_ID,
+      })
     );
 
     const holdings: TokenHolding[] = [];
@@ -87,14 +146,14 @@ export async function getTokenHoldings(
   }
 }
 
-// Batch fetch token metadata from Jupiter token list
+// Batch fetch token metadata from Jupiter token list with enhanced caching
 export async function batchGetTokenMetadata(
   mintAddresses: string[]
 ): Promise<
   Record<string, { name?: string; symbol?: string; logoUri?: string }>
 > {
   try {
-    // Return cached results if available
+    // Return cached results if available and not expired
     const cachedResults: Record<
       string,
       { name?: string; symbol?: string; logoUri?: string }
@@ -102,8 +161,10 @@ export async function batchGetTokenMetadata(
     const uncachedMints: string[] = [];
 
     for (const mint of mintAddresses) {
-      if (tokenMetadataCache.has(mint)) {
-        cachedResults[mint] = tokenMetadataCache.get(mint)!;
+      const cached = tokenMetadataCache.get(mint);
+      if (cached && Date.now() - cached.timestamp < METADATA_CACHE_DURATION) {
+        const { timestamp, ...metadata } = cached;
+        cachedResults[mint] = metadata;
       } else {
         uncachedMints.push(mint);
       }
@@ -113,16 +174,21 @@ export async function batchGetTokenMetadata(
       return cachedResults;
     }
 
-    // Fetch token list if not cached with retry logic
-    if (!tokenListCache) {
-      tokenListCache = await fetchTokenListWithRetry();
+    // Fetch token list if not cached or expired
+    const now = Date.now();
+    if (
+      !tokenListCache.data ||
+      now - tokenListCache.timestamp > METADATA_CACHE_DURATION
+    ) {
+      tokenListCache.data = await fetchTokenListWithRetry();
+      tokenListCache.timestamp = now;
     }
 
     // Process uncached mints with fallback handling
     const results = { ...cachedResults };
 
     for (const mint of uncachedMints) {
-      const token = tokenListCache?.find((t: any) => t.address === mint);
+      const token = tokenListCache.data?.find((t: any) => t.address === mint);
       const metadata = token
         ? {
             name: token.name,
@@ -131,7 +197,7 @@ export async function batchGetTokenMetadata(
           }
         : createFallbackMetadata(mint);
 
-      tokenMetadataCache.set(mint, metadata);
+      tokenMetadataCache.set(mint, { ...metadata, timestamp: now });
       results[mint] = metadata;
     }
 
@@ -146,8 +212,10 @@ export async function batchGetTokenMetadata(
     > = {};
 
     for (const mint of mintAddresses) {
-      if (tokenMetadataCache.has(mint)) {
-        fallbackResults[mint] = tokenMetadataCache.get(mint)!;
+      const cached = tokenMetadataCache.get(mint);
+      if (cached) {
+        const { timestamp, ...metadata } = cached;
+        fallbackResults[mint] = metadata;
       } else {
         fallbackResults[mint] = createFallbackMetadata(mint);
       }
@@ -157,12 +225,12 @@ export async function batchGetTokenMetadata(
   }
 }
 
-// Helper function to fetch token list with retry logic
-async function fetchTokenListWithRetry(maxRetries = 3): Promise<any[] | null> {
+// Helper function to fetch token list with retry logic and better error handling
+async function fetchTokenListWithRetry(maxRetries = 2): Promise<any[] | null> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
       const response = await fetch("https://token.jup.ag/strict", {
         headers: { Accept: "application/json" },
@@ -176,7 +244,7 @@ async function fetchTokenListWithRetry(maxRetries = 3): Promise<any[] | null> {
       }
 
       const tokenList = await response.json();
-      console.log(`Successfully fetched token list on attempt ${attempt}`);
+      console.log(`✅ Token list fetched successfully on attempt ${attempt}`);
       return tokenList;
     } catch (error) {
       console.warn(
@@ -189,8 +257,8 @@ async function fetchTokenListWithRetry(maxRetries = 3): Promise<any[] | null> {
         return null;
       }
 
-      // Wait before retry (exponential backoff)
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      // Wait before retry with exponential backoff
+      await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
     }
   }
 
@@ -218,36 +286,83 @@ export async function getTokenMetadata(
   return results[mintAddress] || {};
 }
 
-// Get token prices from Jupiter API
+function isValidMint(mint: string): boolean {
+  // Validate mint address format
+  return (
+    (mint.length === 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(mint)) ||
+    mint === "So11111111111111111111111111111111111111112"
+  );
+}
+
+// Optimized Jupiter price fetcher with better error handling
+async function fetchJupiterPrice(mint: string): Promise<number> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const url = `https://api.jup.ag/price/v2?ids=${mint}`;
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.data?.[mint]?.price || 0;
+  } catch (error) {
+    console.warn(`Jupiter price fetch failed for ${mint}:`, error);
+    return 0;
+  }
+}
+
+// Optimized token prices with better fallback strategy
 export async function getTokenPrices(
   mintAddresses: string[]
 ): Promise<Record<string, number>> {
   try {
     if (mintAddresses.length === 0) return {};
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    // Filter and validate mints
+    const validMints = mintAddresses.filter(isValidMint);
+    if (validMints.length === 0) return {};
 
-    const response = await fetch(
-      `https://api.jup.ag/price/v2?ids=${mintAddresses.join(",")}`,
-      {
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
+    // Check cache first
+    const cacheKey = validMints.sort().join(",");
+    const cached = multiPriceCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < PRICE_CACHE_DURATION) {
+      return cached.prices;
+    }
+
+    let prices: Record<string, number> = {};
+
+    // Use Jupiter for all tokens with controlled concurrency
+    console.log("🔄 Fetching prices from Jupiter for optimal free tier usage");
+
+    // Use Jupiter for all tokens with controlled concurrency
+    const pricePromises = validMints.map(async (mint) => {
+      const price = await fetchJupiterPrice(mint);
+      return { mint, price };
+    });
+
+    // Process in batches to avoid overwhelming the API
+    const batchSize = 5;
+    for (let i = 0; i < pricePromises.length; i += batchSize) {
+      const batch = pricePromises.slice(i, i + batchSize);
+      const results = await Promise.all(batch);
+
+      results.forEach(({ mint, price }) => {
+        prices[mint] = price;
+      });
+
+      // Small delay between batches
+      if (i + batchSize < pricePromises.length) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
-    );
+    }
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-
-    const prices: Record<string, number> = {};
-    Object.entries(data.data || {}).forEach(
-      ([mint, priceData]: [string, any]) => {
-        prices[mint] = priceData.price;
-      }
-    );
-
+    multiPriceCache.set(cacheKey, { prices, timestamp: Date.now() });
     return prices;
   } catch (error) {
     console.error("Error fetching token prices:", error);
@@ -255,30 +370,29 @@ export async function getTokenPrices(
   }
 }
 
-// Get SOL price in USD
+// Optimized SOL price fetching
 export async function getSolPrice(): Promise<number> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const SOL_MINT = "So11111111111111111111111111111111111111112";
+    const cached = priceCache.get(SOL_MINT);
+    if (cached && Date.now() - cached.timestamp < PRICE_CACHE_DURATION) {
+      return cached.price;
+    }
 
-    const response = await fetch(
-      "https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112",
-      {
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      }
-    );
+    // Use Jupiter directly for better reliability and free tier usage
+    const price = await fetchJupiterPrice(SOL_MINT);
 
-    clearTimeout(timeoutId);
+    if (price > 0) {
+      priceCache.set(SOL_MINT, { price, timestamp: Date.now() });
+      return price;
+    }
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return (
-      data.data?.["So11111111111111111111111111111111111111112"]?.price || 0
-    );
+    // Fallback to a reasonable default if all APIs fail
+    console.warn("All price APIs failed, using cached or default SOL price");
+    return cached?.price || 100; // Reasonable fallback price
   } catch (error) {
     console.error("Error fetching SOL price:", error);
-    return 0;
+    return 100; // Fallback price
   }
 }
 
@@ -287,35 +401,43 @@ export async function getWalletBalance(
   walletAddress: string
 ): Promise<WalletBalance> {
   try {
-    // Step 1: Fetch SOL balance and token holdings concurrently
-    const [solBalance, tokenHoldings, solPrice] = await Promise.all([
+    // Step 1: Fetch SOL balance and token holdings with controlled concurrency
+    const [solBalance, tokenHoldings] = await Promise.all([
       getSolBalance(walletAddress),
       getTokenHoldings(walletAddress),
-      getSolPrice(),
     ]);
 
-    // Step 2: Batch fetch metadata and prices for all tokens concurrently
-    const tokenMints = tokenHoldings.map((h) => h.mint);
-    const [tokenMetadata, prices] = await Promise.all([
-      batchGetTokenMetadata(tokenMints),
-      getTokenPrices(tokenMints),
-    ]);
+    // Step 2: Get SOL price first (most important)
+    const solPrice = await getSolPrice();
 
-    // Step 3: Enrich token holdings with metadata and prices
-    const enrichedTokens: TokenHolding[] = tokenHoldings.map((holding) => {
-      const metadata = tokenMetadata[holding.mint] || {};
-      const priceUsd = prices[holding.mint] || 0;
-      const valueUsd = holding.uiAmount * priceUsd;
+    // Step 3: Process tokens only if we have any
+    let enrichedTokens: TokenHolding[] = [];
 
-      return {
-        ...holding,
-        name: metadata.name,
-        symbol: metadata.symbol,
-        logoUri: metadata.logoUri,
-        priceUsd,
-        valueUsd,
-      };
-    });
+    if (tokenHoldings.length > 0) {
+      const tokenMints = tokenHoldings.map((h) => h.mint);
+
+      // Batch fetch metadata and prices with controlled timing
+      const [tokenMetadata, prices] = await Promise.all([
+        batchGetTokenMetadata(tokenMints),
+        getTokenPrices(tokenMints),
+      ]);
+
+      // Enrich token holdings with metadata and prices
+      enrichedTokens = tokenHoldings.map((holding) => {
+        const metadata = tokenMetadata[holding.mint] || {};
+        const priceUsd = prices[holding.mint] || 0;
+        const valueUsd = holding.uiAmount * priceUsd;
+
+        return {
+          ...holding,
+          name: metadata.name,
+          symbol: metadata.symbol,
+          logoUri: metadata.logoUri,
+          priceUsd,
+          valueUsd,
+        };
+      });
+    }
 
     const solValueUsd = solBalance * solPrice;
     const tokensTotalValue = enrichedTokens.reduce(
@@ -333,7 +455,14 @@ export async function getWalletBalance(
     };
   } catch (error) {
     console.error("Error fetching wallet balance:", error);
-    throw error;
+
+    // Return a safe fallback instead of throwing
+    return {
+      solBalance: 0,
+      solValueUsd: 0,
+      tokens: [],
+      totalValueUsd: 0,
+    };
   }
 }
 

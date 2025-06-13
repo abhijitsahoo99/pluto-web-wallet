@@ -6,6 +6,7 @@ import NetWorthCard from "./NetWorthCard";
 import ActionButtons from "./ActionButtons";
 import { AlignJustify } from "lucide-react";
 import TokenCard from "./TokenCard";
+import TokenDetailsModal from "./TokenDetailsModal";
 import ManageTokensModal from "./ManageTokensModal";
 import SendModal from "./SendModal";
 import ReceiveModal from "./ReceiveModal";
@@ -43,6 +44,11 @@ export default function WalletDashboard({
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+  const [isTokenDetailsOpen, setIsTokenDetailsOpen] = useState(false);
+  const [selectedTokenMint, setSelectedTokenMint] = useState<string | null>(
+    null
+  );
+  const [swapFromToken, setSwapFromToken] = useState<string>("");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(() => {
     // Initialize from localStorage or default to SOL only
@@ -157,6 +163,57 @@ export default function WalletDashboard({
     fetchWalletData(false);
   }, [fetchWalletData]);
 
+  // Handle token click for details modal
+  const handleTokenClick = useCallback((mint: string) => {
+    setSelectedTokenMint(mint);
+    setIsTokenDetailsOpen(true);
+  }, []);
+
+  // Find the selected token data
+  const selectedTokenData = useMemo(() => {
+    if (!selectedTokenMint) return null;
+    if (selectedTokenMint === "So11111111111111111111111111111111111111112") {
+      // SOL token
+      return {
+        mint: "So11111111111111111111111111111111111111112",
+        balance: walletData?.solBalance ? walletData.solBalance * 1e9 : 0, // Convert to lamports
+        decimals: 9,
+        uiAmount: walletData?.solBalance || 0,
+        name: "Solana",
+        symbol: "SOL",
+        logoUri:
+          "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+        priceUsd: walletData?.solBalance
+          ? (walletData.solValueUsd || 0) / walletData.solBalance
+          : 0,
+        valueUsd: walletData?.solValueUsd || 0,
+      };
+    }
+    return (
+      walletData?.tokens.find((token) => token.mint === selectedTokenMint) ||
+      null
+    );
+  }, [selectedTokenMint, walletData]);
+
+  // Handle token details modal close
+  const handleTokenDetailsClose = useCallback(() => {
+    setIsTokenDetailsOpen(false);
+    setSelectedTokenMint(null);
+  }, []);
+
+  // Handle swap from token details
+  const handleSwapFromTokenDetails = useCallback((fromToken: string) => {
+    setSwapFromToken(fromToken);
+    setIsSwapModalOpen(true);
+    setIsTokenDetailsOpen(false);
+  }, []);
+
+  // Handle swap modal close
+  const handleSwapModalClose = useCallback(() => {
+    setIsSwapModalOpen(false);
+    setSwapFromToken("");
+  }, []);
+
   // Memoize computed values and filter visible tokens
   const {
     totalValue,
@@ -183,6 +240,7 @@ export default function WalletDashboard({
       priceUsd: solBalance > 0 ? solValueUsd / solBalance : 0,
       valueUsd: solValueUsd,
       logoUri: SOL_LOGO_URI,
+      mint: "So11111111111111111111111111111111111111112",
     };
 
     return {
@@ -282,7 +340,10 @@ export default function WalletDashboard({
                     <div className="divide-y divide-white/10">
                       {/* SOL Balance - only show if visible and has balance */}
                       {visibleTokens.has("SOL") && solBalance > 0 && (
-                        <TokenCard {...solTokenProps} />
+                        <TokenCard
+                          {...solTokenProps}
+                          onClick={handleTokenClick}
+                        />
                       )}
 
                       {/* Visible SPL Tokens */}
@@ -295,6 +356,8 @@ export default function WalletDashboard({
                           priceUsd={token.priceUsd || 0}
                           valueUsd={token.valueUsd || 0}
                           logoUri={token.logoUri}
+                          mint={token.mint}
+                          onClick={handleTokenClick}
                         />
                       ))}
                     </div>
@@ -325,6 +388,16 @@ export default function WalletDashboard({
           </div>
         </div>
       </div>
+
+      {/* Token Details Modal */}
+      <TokenDetailsModal
+        isOpen={isTokenDetailsOpen}
+        onClose={handleTokenDetailsClose}
+        tokenMint={selectedTokenMint}
+        tokenSymbol={selectedTokenData?.symbol}
+        onSwapClick={handleSwapFromTokenDetails}
+        existingTokenData={selectedTokenData}
+      />
 
       {/* Manage Tokens Modal */}
       <ManageTokensModal
@@ -357,10 +430,11 @@ export default function WalletDashboard({
       {/* Swap Modal */}
       <SwapModal
         isOpen={isSwapModalOpen}
-        onClose={() => setIsSwapModalOpen(false)}
+        onClose={handleSwapModalClose}
         solBalance={solBalance}
         tokens={tokens}
         walletAddress={walletAddress}
+        defaultFromToken={swapFromToken}
       />
     </>
   );
