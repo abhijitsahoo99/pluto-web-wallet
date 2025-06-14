@@ -20,7 +20,7 @@ const MAX_CACHE_ENTRIES = 10; // Prevent memory leaks
 
 // Rate limiting - increased to prevent 429 errors
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 800; // 800ms between requests to prevent 429 errors
+const MIN_REQUEST_INTERVAL = 1200; // 1200ms between requests to prevent 429 errors
 
 // Token metadata cache
 const tokenMetadataCache = new Map<

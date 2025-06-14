@@ -26,6 +26,7 @@ interface SendModalProps {
   solValueUsd: number;
   tokens: TokenHolding[];
   walletAddress: string;
+  recipientAddress?: string;
 }
 
 interface SelectedToken {
@@ -233,6 +234,7 @@ export default function SendModal({
   solValueUsd,
   tokens,
   walletAddress,
+  recipientAddress: initialRecipientAddress = "",
 }: SendModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedToken, setSelectedToken] = useState<SelectedToken>({
@@ -282,6 +284,13 @@ export default function SendModal({
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
+
+  // Pre-fill recipient address when modal opens with initial value
+  useEffect(() => {
+    if (isOpen && initialRecipientAddress) {
+      setRecipientAddress(initialRecipientAddress);
+    }
+  }, [isOpen, initialRecipientAddress]);
 
   const handleClose = useCallback(() => {
     setIsAnimating(false);

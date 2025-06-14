@@ -17,12 +17,14 @@ import SwapModal from "./SwapModal";
 interface WalletDashboardProps {
   walletAddress: string;
   onBalanceUpdate?: (balance: number) => void;
+  recipientAddress?: string;
+  onSendModalOpen?: () => void;
 }
 
 // Constants
 const SOL_LOGO_URI =
   "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png";
-const POLLING_INTERVAL = 60000; // 60 seconds
+const POLLING_INTERVAL = 90000; // 90 seconds - more conservative to prevent rate limiting
 
 // Loading component to reduce duplication
 const LoadingScreen = ({ message }: { message: string }) => (
@@ -38,6 +40,8 @@ const LoadingScreen = ({ message }: { message: string }) => (
 export default function WalletDashboard({
   walletAddress,
   onBalanceUpdate,
+  recipientAddress,
+  onSendModalOpen,
 }: WalletDashboardProps) {
   const [walletData, setWalletData] = useState<WalletBalance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +71,7 @@ export default function WalletDashboard({
     return new Set(["SOL"]); // Default: SOL visible
   });
   const fetchingRef = useRef(false);
+  const [sendRecipientAddress, setSendRecipientAddress] = useState<string>("");
 
   // Persist visible tokens to localStorage whenever it changes
   useEffect(() => {
@@ -275,6 +280,15 @@ export default function WalletDashboard({
     []
   );
 
+  // Handle recipient address from QR scan - optimized to prevent unnecessary re-renders
+  useEffect(() => {
+    if (recipientAddress && recipientAddress.trim() && !isSendModalOpen) {
+      setSendRecipientAddress(recipientAddress);
+      setIsSendModalOpen(true);
+      onSendModalOpen?.(); // Notify parent that send modal was opened
+    }
+  }, [recipientAddress, isSendModalOpen, onSendModalOpen]);
+
   // Early returns for different states
   if (!walletAddress?.trim()) {
     return <LoadingScreen message="Connecting to wallet..." />;
@@ -415,11 +429,15 @@ export default function WalletDashboard({
       {/* Send Modal */}
       <SendModal
         isOpen={isSendModalOpen}
-        onClose={() => setIsSendModalOpen(false)}
+        onClose={() => {
+          setIsSendModalOpen(false);
+          setSendRecipientAddress(""); // Clear recipient address when modal closes
+        }}
         solBalance={solBalance}
         solValueUsd={solValueUsd}
         tokens={tokens}
         walletAddress={walletAddress}
+        recipientAddress={sendRecipientAddress}
       />
 
       {/* Receive Modal */}

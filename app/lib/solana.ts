@@ -35,7 +35,7 @@ const METADATA_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for metadata
 
 // Rate limiting for RPC calls - MUCH MORE CONSERVATIVE
 let lastRpcCall = 0;
-const RPC_RATE_LIMIT_MS = 500; // 500ms between calls to prevent 429 errors
+const RPC_RATE_LIMIT_MS = 1000; // 1000ms (1 second) between calls to prevent 429 errors
 
 // Rate limiting helper with exponential backoff for 429 errors
 async function rateLimitedRpcCall<T>(fn: () => Promise<T>): Promise<T> {
@@ -60,7 +60,8 @@ async function rateLimitedRpcCall<T>(fn: () => Promise<T>): Promise<T> {
     } catch (error: any) {
       if (error?.message?.includes("429") || error?.status === 429) {
         retries++;
-        const delay = Math.min(2000 * Math.pow(2, retries), 10000); // Longer exponential backoff, max 10s
+        const delay = Math.min(3000 * Math.pow(2, retries), 15000); // Longer exponential backoff, max 15s
+        console.warn(`Rate limited (429). Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }

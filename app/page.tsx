@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import { useState, useMemo, useCallback } from "react";
 import WalletDashboard from "./components/WalletDashboard";
+import QRScannerModal from "./components/QRScannerModal";
 import { ScanLine, History, Check, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -16,6 +17,9 @@ export default function Home() {
   const shortSend = sendAddress.slice(0, 4) + "..." + sendAddress.slice(-4);
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [scannedRecipientAddress, setScannedRecipientAddress] =
+    useState<string>("");
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [isNavigatingToTransactions, setIsNavigatingToTransactions] =
     useState(false);
@@ -30,6 +34,26 @@ export default function Home() {
   const handleTransactionsClick = useCallback(() => {
     router.push("/transactions");
   }, [router]);
+
+  // Handle QR Scanner
+  const handleScannerClick = useCallback(() => {
+    setQrScannerOpen(true);
+  }, []);
+
+  const handleQrScannerClose = useCallback(() => {
+    setQrScannerOpen(false);
+  }, []);
+
+  const handleQrScan = useCallback((address: string) => {
+    console.log("Scanned address:", address);
+    setScannedRecipientAddress(address);
+    setQrScannerOpen(false);
+  }, []);
+
+  const handleSendModalOpened = useCallback(() => {
+    // Clear the scanned address after it's been used
+    setScannedRecipientAddress("");
+  }, []);
 
   // Optimize wallet address computation with memoization
   const walletAddress = useMemo(() => {
@@ -156,6 +180,7 @@ export default function Home() {
           {/* Scanner Icon */}
           <button
             className="w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-white/10 hover:scale-110 active:scale-95 active:bg-white/20"
+            onClick={handleScannerClick}
             aria-label="Open scanner"
           >
             <ScanLine size={28} stroke="white" strokeWidth={2} />
@@ -182,10 +207,19 @@ export default function Home() {
         totalValueUsd={walletBalance}
       />
 
+      {/* QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={qrScannerOpen}
+        onClose={handleQrScannerClose}
+        onScan={handleQrScan}
+      />
+
       {/* Main Content */}
       <WalletDashboard
         walletAddress={walletAddress}
         onBalanceUpdate={handleWalletBalanceUpdate}
+        recipientAddress={scannedRecipientAddress}
+        onSendModalOpen={handleSendModalOpened}
       />
     </div>
   );
