@@ -549,13 +549,23 @@ export function formatCurrency(
     return "Failed to load";
   }
 
-  if (numAmount < 0.001) return "< $0.001";
-  if (numAmount < 1) {
-    return `$${numAmount.toFixed(4)}`;
+  // For very small values, show actual value with scientific notation or high precision
+  if (numAmount > 0 && numAmount < 0.000001) {
+    return `$${numAmount.toExponential(2)}`;
   }
+
+  // For small values, show high precision
+  if (numAmount < 0.001) {
+    return `$${numAmount.toFixed(8)}`;
+  }
+
+  if (numAmount < 1) {
+    return `$${numAmount.toFixed(6)}`;
+  }
+
   return `$${numAmount.toLocaleString("en-US", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 6,
   })}`;
 }
 
