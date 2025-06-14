@@ -8,15 +8,21 @@ import {
   Shield,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { getTokenAnalytics } from "../lib/tokenAnalytics";
 import {
-  getTokenAnalytics,
   TokenAnalytics,
+  TokenDetails,
+  PricePoint,
   TopHolder,
+  SecurityAnalysis,
+  RealTradeData,
+} from "../types/tokenAnalytics";
+import { TokenHolding } from "../types/solana";
+import {
   formatLargeNumber,
   formatCurrency,
   shortenAddress,
-} from "../lib/tokenAnalytics";
-import { TokenHolding } from "../lib/solana";
+} from "../utils/formatting";
 
 interface TokenDetailsModalProps {
   isOpen: boolean;
@@ -395,9 +401,7 @@ export default function TokenDetailsModal({
                       ))
                     ) : (
                       <div className="text-gray-400 text-sm text-center py-4">
-                        {analytics.isDataAvailable
-                          ? "Top holder data not available"
-                          : "Loading holder data..."}
+                        N/A
                       </div>
                     )}
                   </div>
@@ -457,7 +461,7 @@ export default function TokenDetailsModal({
                     <div className="text-white text-base font-medium">
                       {analytics.totalHolders > 0
                         ? analytics.totalHolders.toLocaleString()
-                        : "Failed to load"}
+                        : "N/A"}
                     </div>
                   </div>
                 </div>

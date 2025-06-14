@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   X,
   ArrowUpRight,
@@ -6,8 +6,10 @@ import {
   RefreshCw,
   Copy,
   ExternalLink,
+  RotateCcw,
 } from "lucide-react";
-import { Transaction, formatTimeAgo } from "../lib/transactions";
+import { Transaction } from "../types/transactions";
+import { formatTimeAgo } from "../lib/transactions";
 
 interface TransactionDetailsModalProps {
   isOpen: boolean;

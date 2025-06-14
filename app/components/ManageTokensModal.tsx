@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { TokenHolding } from "../lib/solana";
+import { X, Eye, EyeOff } from "lucide-react";
+import { TokenHolding } from "../types/solana";
 
 interface ManageTokensModalProps {
   isOpen: boolean;

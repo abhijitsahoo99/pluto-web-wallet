@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getWalletBalance, WalletBalance } from "../lib/solana";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { getWalletBalance } from "../lib/solana";
+import { WalletBalance } from "../types/solana";
 import NetWorthCard from "./NetWorthCard";
 import ActionButtons from "./ActionButtons";
 import { AlignJustify } from "lucide-react";

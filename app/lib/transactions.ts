@@ -5,27 +5,12 @@ import {
   ConfirmedSignatureInfo,
 } from "@solana/web3.js";
 import { connection, batchGetTokenMetadata } from "./solana";
+import { Transaction } from "../types/transactions";
 
-export interface Transaction {
-  signature: string;
-  type: "send" | "receive" | "swap";
-  amount: number;
-  token: string;
-  tokenSymbol: string;
-  counterparty?: string;
-  timestamp: number;
-  status: "success" | "failed";
-  fee?: number;
-  slot?: number;
-  swapDetails?: {
-    fromToken: string;
-    fromSymbol: string;
-    fromAmount: number;
-    toToken: string;
-    toSymbol: string;
-    toAmount: number;
-  };
-}
+const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
+const SOLANA_RPC_URL =
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+  `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 // Transaction cache to avoid refetching
 const transactionCache = new Map<string, Transaction[]>();

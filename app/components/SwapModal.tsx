@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { X, ChevronDown, RotateCcw, ArrowUpDown } from "lucide-react";
-import { TokenHolding, connection } from "../lib/solana";
+import { TokenHolding } from "../types/solana";
+import { connection } from "../lib/solana";
 import { usePrivy, useSolanaWallets } from "@privy-io/react-auth";
 import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 

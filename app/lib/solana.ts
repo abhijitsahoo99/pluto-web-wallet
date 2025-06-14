@@ -1,29 +1,12 @@
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TokenHolding, WalletBalance } from "../types/solana";
+import { formatPrice, formatValue } from "../utils/formatting";
 
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
 const SOLANA_RPC_URL =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
   `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-
-export interface TokenHolding {
-  mint: string;
-  balance: number;
-  decimals: number;
-  uiAmount: number;
-  name?: string;
-  symbol?: string;
-  logoUri?: string;
-  priceUsd?: number;
-  valueUsd?: number;
-}
-
-export interface WalletBalance {
-  solBalance: number;
-  solValueUsd?: number;
-  tokens: TokenHolding[];
-  totalValueUsd: number;
-}
 
 // Initialize Solana connection with optimized settings
 export const connection = new Connection(SOLANA_RPC_URL, {
@@ -593,14 +576,5 @@ export async function getWalletBalance(
   }
 }
 
-// Utility function to format prices safely
-export function formatPrice(price: number | undefined | null): string {
-  if (price === undefined || price === null || isNaN(price)) return "0.00";
-  return price.toFixed(2);
-}
-
-// Utility function to format values safely
-export function formatValue(value: number | undefined | null): string {
-  if (value === undefined || value === null || isNaN(value)) return "$0.00";
-  return `$${value.toFixed(2)}`;
-}
+// Re-export utility functions for backward compatibility
+export { formatPrice, formatValue };

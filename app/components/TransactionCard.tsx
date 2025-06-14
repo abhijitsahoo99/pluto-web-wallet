@@ -1,10 +1,13 @@
+import { memo } from "react";
 import {
   ArrowUpDown,
   ArrowDownLeft,
   ArrowUpRight,
   RefreshCw,
+  RotateCcw,
 } from "lucide-react";
-import { Transaction, formatTimeAgo } from "../lib/transactions";
+import { Transaction } from "../types/transactions";
+import { formatTimeAgo } from "../lib/transactions";
 
 interface TransactionCardProps {
   transaction: Transaction;

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { X, Check } from "lucide-react";
-import { TokenHolding, connection } from "../lib/solana";
+import { TokenHolding } from "../types/solana";
+import { connection } from "../lib/solana";
 import { usePrivy, useSolanaWallets } from "@privy-io/react-auth";
 import {
   Connection,

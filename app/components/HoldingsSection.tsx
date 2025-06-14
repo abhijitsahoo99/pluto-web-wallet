@@ -1,4 +1,4 @@
-import { TokenHolding } from "../lib/solana";
+import { TokenHolding } from "../types/solana";
 import TokenCard from "./TokenCard";
 import TokenDetailsModal from "./TokenDetailsModal";
 import { AlignJustify } from "lucide-react";

@@ -6,7 +6,8 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionCard from "../components/TransactionCard";
 import TransactionDetailsModal from "../components/TransactionDetailsModal";
-import { getWalletTransactions, Transaction } from "../lib/transactions";
+import { getWalletTransactions } from "../lib/transactions";
+import { Transaction } from "../types/transactions";
 
 export default function TransactionsPage() {
   const { user, authenticated, ready } = usePrivy();
