@@ -108,17 +108,9 @@ function TokenCard({
                 onError={(e) => {
                   // Enhanced error handling with debugging
                   const target = e.target as HTMLImageElement;
-                  console.log(`❌ Logo failed to load for ${symbol}:`, logoUri);
                   target.style.display = "none";
                   const fallback = target.nextElementSibling as HTMLElement;
                   if (fallback) fallback.classList.remove("hidden");
-                }}
-                onLoad={() => {
-                  // Debug successful loads
-                  console.log(
-                    `✅ Logo loaded successfully for ${symbol}:`,
-                    logoUri
-                  );
                 }}
               />
               <div className="text-white font-bold text-xs hidden">

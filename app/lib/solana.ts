@@ -78,9 +78,6 @@ async function rateLimitedRpcCall<T>(fn: () => Promise<T>): Promise<T> {
       if (error?.message?.includes("429") || error?.status === 429) {
         retries++;
         const delay = Math.min(2000 * Math.pow(2, retries), 10000); // Longer exponential backoff, max 10s
-        console.warn(
-          `Server responded with 429. Retrying after ${delay}ms delay...`
-        );
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
@@ -100,7 +97,6 @@ export async function getSolBalance(walletAddress: string): Promise<number> {
     );
     return balance / LAMPORTS_PER_SOL;
   } catch (error) {
-    console.error("Error fetching SOL balance:", error);
     return 0;
   }
 }
@@ -136,12 +132,11 @@ export async function getTokenHoldings(
           }
         }
       } catch (error) {
-        console.error("Error processing token account:", error);
+        // Skip invalid token accounts
       }
     }
     return holdings;
   } catch (error) {
-    console.error("Error fetching token holdings:", error);
     return [];
   }
 }
@@ -241,20 +236,6 @@ async function fetchDexScreenerMetadata(mint: string): Promise<{
             logoUri: finalLogoUri || undefined,
           };
 
-          // Debug logging to see what we're getting from DexScreener
-          console.log(`📊 DexScreener metadata for ${mint.slice(0, 8)}...`, {
-            name: metadata.name,
-            symbol: metadata.symbol,
-            logoUri: metadata.logoUri,
-            rawToken: {
-              logoURI: ourToken.logoURI,
-              logoUri: ourToken.logoUri,
-              logo: ourToken.logo,
-              image: ourToken.image,
-              pairLogoUri: pairLogoUri,
-            },
-          });
-
           return metadata;
         }
       }
@@ -331,10 +312,6 @@ export async function batchGetTokenMetadata(
 
     // Step 3: For tokens missing from Jupiter, try DexScreener (with rate limiting)
     if (missingFromJupiter.length > 0) {
-      console.log(
-        `🔄 Fetching metadata for ${missingFromJupiter.length} tokens from DexScreener fallback`
-      );
-
       // Filter out system tokens and very short addresses that are unlikely to be real tokens
       const validForDexScreener = missingFromJupiter.filter((mint) => {
         // Skip system tokens and invalid addresses
@@ -382,8 +359,6 @@ export async function batchGetTokenMetadata(
 
     return results;
   } catch (error) {
-    console.error("Error fetching token metadata:", error);
-
     // Return cached results + fallbacks for uncached mints
     const fallbackResults: Record<
       string,
@@ -423,16 +398,9 @@ async function fetchTokenListWithRetry(maxRetries = 2): Promise<any[] | null> {
       }
 
       const tokenList = await response.json();
-      console.log(`✅ Token list fetched successfully on attempt ${attempt}`);
       return tokenList;
     } catch (error) {
-      console.warn(
-        `Token list fetch attempt ${attempt}/${maxRetries} failed:`,
-        error
-      );
-
       if (attempt === maxRetries) {
-        console.error("All token list fetch attempts failed, using fallbacks");
         return null;
       }
 
@@ -480,7 +448,6 @@ async function fetchJupiterPrice(mint: string): Promise<number> {
     const data = await res.json();
     return data.data?.[mint]?.price || 0;
   } catch (error) {
-    console.warn(`Jupiter price fetch failed for ${mint}:`, error);
     return 0;
   }
 }
@@ -504,9 +471,6 @@ export async function getTokenPrices(
     }
 
     let prices: Record<string, number> = {};
-
-    // Use Jupiter for all tokens with controlled concurrency
-    console.log("🔄 Fetching prices from Jupiter for optimal free tier usage");
 
     // Use Jupiter for all tokens with controlled concurrency
     const pricePromises = validMints.map(async (mint) => {
@@ -533,7 +497,6 @@ export async function getTokenPrices(
     multiPriceCache.set(cacheKey, { prices, timestamp: Date.now() });
     return prices;
   } catch (error) {
-    console.error("Error fetching token prices:", error);
     return {};
   }
 }
@@ -556,10 +519,8 @@ export async function getSolPrice(): Promise<number> {
     }
 
     // Fallback to a reasonable default if all APIs fail
-    console.warn("All price APIs failed, using cached or default SOL price");
     return cached?.price || 100; // Reasonable fallback price
   } catch (error) {
-    console.error("Error fetching SOL price:", error);
     return 100; // Fallback price
   }
 }
@@ -622,8 +583,6 @@ export async function getWalletBalance(
       totalValueUsd: solValueUsd + tokensTotalValue,
     };
   } catch (error) {
-    console.error("Error fetching wallet balance:", error);
-
     // Return a safe fallback instead of throwing
     return {
       solBalance: 0,
