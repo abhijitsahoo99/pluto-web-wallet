@@ -100,26 +100,36 @@ function TokenCard({
         {/* Token logo - Made smaller */}
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden flex-shrink-0">
           {logoUri ? (
-            <img
-              src={logoUri}
-              alt={symbol}
-              className="w-10 h-10 rounded-full object-cover"
-              onError={(e) => {
-                // Fallback to initials if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                const fallback = target.nextElementSibling as HTMLElement;
-                if (fallback) fallback.classList.remove("hidden");
-              }}
-            />
-          ) : null}
-          <div
-            className={`text-white font-bold text-xs ${
-              logoUri ? "hidden" : ""
-            }`}
-          >
-            {symbol.slice(0, 3).toUpperCase()}
-          </div>
+            <>
+              <img
+                src={logoUri}
+                alt={symbol}
+                className="w-10 h-10 rounded-full object-cover"
+                onError={(e) => {
+                  // Enhanced error handling with debugging
+                  const target = e.target as HTMLImageElement;
+                  console.log(`❌ Logo failed to load for ${symbol}:`, logoUri);
+                  target.style.display = "none";
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.classList.remove("hidden");
+                }}
+                onLoad={() => {
+                  // Debug successful loads
+                  console.log(
+                    `✅ Logo loaded successfully for ${symbol}:`,
+                    logoUri
+                  );
+                }}
+              />
+              <div className="text-white font-bold text-xs hidden">
+                {symbol.slice(0, 3).toUpperCase()}
+              </div>
+            </>
+          ) : (
+            <div className="text-white font-bold text-xs">
+              {symbol.slice(0, 3).toUpperCase()}
+            </div>
+          )}
         </div>
 
         {/* Token details - Reduced font size and weight */}

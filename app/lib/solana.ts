@@ -146,59 +146,238 @@ export async function getTokenHoldings(
   }
 }
 
-// Batch fetch token metadata from Jupiter token list with enhanced caching
+// Helper function to create fallback metadata for unknown tokens
+function createFallbackMetadata(mint: string): {
+  name?: string;
+  symbol?: string;
+  logoUri?: string;
+} {
+  return {
+    name: `Token ${mint.slice(0, 8)}...`,
+    symbol: mint.slice(0, 4).toUpperCase(),
+    logoUri: undefined,
+  };
+}
+
+// NEW: Fetch token metadata from DexScreener as fallback
+async function fetchDexScreenerMetadata(mint: string): Promise<{
+  name?: string;
+  symbol?: string;
+  logoUri?: string;
+}> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(
+      `https://api.dexscreener.com/latest/dex/tokens/${mint}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "WalletApp/1.0",
+        },
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return createFallbackMetadata(mint);
+    }
+
+    const data = await response.json();
+    const pairs = data.pairs || [];
+
+    if (pairs.length > 0) {
+      // Find the pair that contains our mint address
+      const validPair = pairs.find((pair: any) => {
+        const baseToken = pair.baseToken;
+        const quoteToken = pair.quoteToken;
+        return baseToken?.address === mint || quoteToken?.address === mint;
+      });
+
+      if (validPair) {
+        // Determine which token in the pair is ours
+        const isBaseToken = validPair.baseToken?.address === mint;
+        const ourToken = isBaseToken
+          ? validPair.baseToken
+          : validPair.quoteToken;
+
+        if (ourToken?.name && ourToken?.symbol) {
+          // Handle different logo field names that DexScreener might use
+          const logoUri =
+            ourToken.logoURI ||
+            ourToken.logoUri ||
+            ourToken.logo ||
+            ourToken.image;
+
+          // Additional logo sources from the pair info itself
+          const pairLogoUri =
+            validPair.info?.imageUrl || validPair.info?.logoUrl;
+
+          // Try to get the best logo URL available
+          let finalLogoUri = logoUri || pairLogoUri;
+
+          // Validate and clean the logo URL
+          if (finalLogoUri) {
+            try {
+              // Ensure it's a valid URL
+              new URL(finalLogoUri);
+
+              // Some DexScreener URLs might need cleaning
+              if (finalLogoUri.includes("?")) {
+                finalLogoUri = finalLogoUri.split("?")[0]; // Remove query parameters that might cause issues
+              }
+            } catch (error) {
+              // Invalid URL, don't use it
+              finalLogoUri = undefined;
+            }
+          }
+
+          const metadata = {
+            name: ourToken.name.trim(),
+            symbol: ourToken.symbol.trim().toUpperCase(),
+            logoUri: finalLogoUri || undefined,
+          };
+
+          // Debug logging to see what we're getting from DexScreener
+          console.log(`📊 DexScreener metadata for ${mint.slice(0, 8)}...`, {
+            name: metadata.name,
+            symbol: metadata.symbol,
+            logoUri: metadata.logoUri,
+            rawToken: {
+              logoURI: ourToken.logoURI,
+              logoUri: ourToken.logoUri,
+              logo: ourToken.logo,
+              image: ourToken.image,
+              pairLogoUri: pairLogoUri,
+            },
+          });
+
+          return metadata;
+        }
+      }
+    }
+
+    return createFallbackMetadata(mint);
+  } catch (error) {
+    // Silent fallback for production
+    return createFallbackMetadata(mint);
+  }
+}
+
+// ENHANCED: Batch get token metadata with DexScreener fallback
 export async function batchGetTokenMetadata(
   mintAddresses: string[]
 ): Promise<
   Record<string, { name?: string; symbol?: string; logoUri?: string }>
 > {
   try {
-    // Return cached results if available and not expired
-    const cachedResults: Record<
+    if (mintAddresses.length === 0) return {};
+
+    const results: Record<
       string,
       { name?: string; symbol?: string; logoUri?: string }
     > = {};
-    const uncachedMints: string[] = [];
+    const now = Date.now();
 
+    // Step 1: Check cache and collect uncached mints
+    const uncachedMints: string[] = [];
     for (const mint of mintAddresses) {
       const cached = tokenMetadataCache.get(mint);
-      if (cached && Date.now() - cached.timestamp < METADATA_CACHE_DURATION) {
+      if (cached && now - cached.timestamp < METADATA_CACHE_DURATION) {
         const { timestamp, ...metadata } = cached;
-        cachedResults[mint] = metadata;
+        results[mint] = metadata;
       } else {
         uncachedMints.push(mint);
       }
     }
 
     if (uncachedMints.length === 0) {
-      return cachedResults;
+      return results;
     }
 
-    // Fetch token list if not cached or expired
-    const now = Date.now();
-    if (
-      !tokenListCache.data ||
-      now - tokenListCache.timestamp > METADATA_CACHE_DURATION
-    ) {
-      tokenListCache.data = await fetchTokenListWithRetry();
-      tokenListCache.timestamp = now;
-    }
+    // Step 2: Fetch from Jupiter token list
+    const tokenList = await fetchTokenListWithRetry();
+    const jupiterResults: Record<string, any> = {};
+    const missingFromJupiter: string[] = [];
 
-    // Process uncached mints with fallback handling
-    const results = { ...cachedResults };
+    if (tokenList) {
+      // Create a map for faster lookups
+      const tokenMap = new Map(
+        tokenList.map((token: any) => [token.address, token])
+      );
 
-    for (const mint of uncachedMints) {
-      const token = tokenListCache.data?.find((t: any) => t.address === mint);
-      const metadata = token
-        ? {
+      for (const mint of uncachedMints) {
+        const token = tokenMap.get(mint);
+        if (token) {
+          const metadata = {
             name: token.name,
             symbol: token.symbol,
             logoUri: token.logoURI,
-          }
-        : createFallbackMetadata(mint);
+          };
+          jupiterResults[mint] = metadata;
+          results[mint] = metadata;
+          tokenMetadataCache.set(mint, { ...metadata, timestamp: now });
+        } else {
+          missingFromJupiter.push(mint);
+        }
+      }
+    } else {
+      // If Jupiter fails, all mints are missing
+      missingFromJupiter.push(...uncachedMints);
+    }
 
-      tokenMetadataCache.set(mint, { ...metadata, timestamp: now });
-      results[mint] = metadata;
+    // Step 3: For tokens missing from Jupiter, try DexScreener (with rate limiting)
+    if (missingFromJupiter.length > 0) {
+      console.log(
+        `🔄 Fetching metadata for ${missingFromJupiter.length} tokens from DexScreener fallback`
+      );
+
+      // Filter out system tokens and very short addresses that are unlikely to be real tokens
+      const validForDexScreener = missingFromJupiter.filter((mint) => {
+        // Skip system tokens and invalid addresses
+        if (mint.length < 32 || mint === "11111111111111111111111111111111") {
+          return false;
+        }
+        return true;
+      });
+
+      if (validForDexScreener.length > 0) {
+        // Process DexScreener requests with rate limiting (max 3 concurrent)
+        const batchSize = 3;
+        for (let i = 0; i < validForDexScreener.length; i += batchSize) {
+          const batch = validForDexScreener.slice(i, i + batchSize);
+
+          const batchPromises = batch.map(async (mint) => {
+            const metadata = await fetchDexScreenerMetadata(mint);
+            return { mint, metadata };
+          });
+
+          const batchResults = await Promise.all(batchPromises);
+
+          batchResults.forEach(({ mint, metadata }) => {
+            results[mint] = metadata;
+            tokenMetadataCache.set(mint, { ...metadata, timestamp: now });
+          });
+
+          // Rate limiting: wait between batches
+          if (i + batchSize < validForDexScreener.length) {
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second between batches
+          }
+        }
+      }
+
+      // For any remaining tokens (invalid ones), use fallback metadata
+      const remainingTokens = missingFromJupiter.filter(
+        (mint) => !validForDexScreener.includes(mint)
+      );
+      remainingTokens.forEach((mint) => {
+        const fallbackMetadata = createFallbackMetadata(mint);
+        results[mint] = fallbackMetadata;
+        tokenMetadataCache.set(mint, { ...fallbackMetadata, timestamp: now });
+      });
     }
 
     return results;
@@ -263,19 +442,6 @@ async function fetchTokenListWithRetry(maxRetries = 2): Promise<any[] | null> {
   }
 
   return null;
-}
-
-// Helper function to create fallback metadata for unknown tokens
-function createFallbackMetadata(mint: string): {
-  name?: string;
-  symbol?: string;
-  logoUri?: string;
-} {
-  return {
-    name: `Token ${mint.slice(0, 8)}...`,
-    symbol: mint.slice(0, 4).toUpperCase(),
-    logoUri: undefined,
-  };
 }
 
 // Get token metadata from Jupiter token list (legacy function for backward compatibility)
