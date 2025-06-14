@@ -11,6 +11,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
   getTokenAnalytics,
   TokenAnalytics,
+  TopHolder,
   formatLargeNumber,
   formatCurrency,
   shortenAddress,
@@ -361,82 +362,58 @@ export default function TokenDetailsModal({
                     Top Holders
                   </h5>
                   <p className="text-gray-400 text-sm mb-3">
-                    Total Holders:{" "}
-                    {formatLargeNumber(
-                      Math.max(
-                        analytics.tradeData.buys24h +
-                          analytics.tradeData.sells24h * 10,
-                        1000
-                      )
-                    )}
+                    Top holders by percentage of total supply
                   </p>
 
                   <div className="space-y-2">
-                    {/* Generate realistic top holders based on token type */}
-                    {[
-                      {
-                        percentage:
-                          analytics.details.status === "Listed" ? 15.2 : 25.02,
-                        address: "BQbS88PT...ajPgjR",
-                      },
-                      {
-                        percentage:
-                          analytics.details.status === "Listed" ? 8.9 : 13.49,
-                        address: "5DkgLGar...e1deeViy",
-                      },
-                      {
-                        percentage:
-                          analytics.details.status === "Listed" ? 5.1 : 6.26,
-                        address: "4ybRAAgh...vE8sY1",
-                      },
-                      {
-                        percentage:
-                          analytics.details.status === "Listed" ? 3.8 : 3.91,
-                        address: "93aKLoUh...ktbmh",
-                      },
-                      {
-                        percentage:
-                          analytics.details.status === "Listed" ? 3.2 : 3.91,
-                        address: "u1bZDXRn...gRbVm",
-                      },
-                    ].map((holder, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className="text-gray-400 font-mono text-xs">
-                            {holder.address}
-                          </span>
-                          <div className="flex-1 bg-gray-700 rounded-full h-1.5 max-w-[120px]">
-                            <div
-                              className="bg-[#35C2E2] h-1.5 rounded-full"
-                              style={{
-                                width: `${Math.min(
-                                  holder.percentage * 4,
-                                  100
-                                )}%`,
-                              }}
-                            />
+                    {analytics.topHolders.length > 0 ? (
+                      analytics.topHolders.slice(0, 5).map((holder, index) => (
+                        <div
+                          key={holder.address}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-gray-400 font-mono text-xs">
+                              {shortenAddress(holder.address)}
+                            </span>
+                            <div className="flex-1 bg-gray-700 rounded-full h-1.5 max-w-[120px]">
+                              <div
+                                className="bg-[#35C2E2] h-1.5 rounded-full"
+                                style={{
+                                  width: `${Math.min(
+                                    holder.percentage * 4,
+                                    100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
                           </div>
+                          <span className="text-white font-normal text-xs">
+                            {holder.percentage.toFixed(2)}%
+                          </span>
                         </div>
-                        <span className="text-white font-normal text-xs">
-                          {holder.percentage.toFixed(2)}%
-                        </span>
+                      ))
+                    ) : (
+                      <div className="text-gray-400 text-sm text-center py-4">
+                        {analytics.isDataAvailable
+                          ? "Top holder data not available"
+                          : "Loading holder data..."}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Info Section */}
               <div className="mt-6 bg-[#0C1F2D] rounded-xl p-4">
-              <h4 className="text-white text-xl font-medium mb-3">Info</h4>
+                <h4 className="text-white text-xl font-medium mb-3">Info</h4>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <div className="text-gray-400 text-sm mb-1">Liquidity</div>
                     <div className="text-white text-base font-medium">
-                      {formatCurrency(analytics.details.liquidity)}
+                      {analytics.tradeData.liquidity > 0
+                        ? formatCurrency(analytics.tradeData.liquidity)
+                        : "Failed to load"}
                     </div>
                   </div>
                   <div>
@@ -456,33 +433,31 @@ export default function TokenDetailsModal({
                     <div className="text-white text-base font-medium">
                       {analytics.details.marketCap
                         ? formatCurrency(analytics.details.marketCap)
-                        : "N/A"}
+                        : "Failed to load"}
                     </div>
                   </div>
                   <div>
-                      <div className="text-gray-400 text-sm mb-1">
+                    <div className="text-gray-400 text-sm mb-1">
                       Circulating Supply
                     </div>
                     <div className="text-white text-base font-medium">
-                      {formatLargeNumber(
-                        analytics.details.marketCap &&
-                          analytics.details.price > 0
-                          ? analytics.details.marketCap /
+                      {analytics.details.marketCap &&
+                      analytics.details.price > 0
+                        ? formatLargeNumber(
+                            analytics.details.marketCap /
                               analytics.details.price
-                          : 999610000
-                      )}
+                          )
+                        : "Failed to load"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400 text-sm mb-1">Holders</div>
+                    <div className="text-gray-400 text-sm mb-1">
+                      Total Holders
+                    </div>
                     <div className="text-white text-base font-medium">
-                      {formatLargeNumber(
-                        Math.max(
-                          analytics.tradeData.buys24h +
-                            analytics.tradeData.sells24h * 10,
-                          1000
-                        )
-                      )}
+                      {analytics.totalHolders > 0
+                        ? analytics.totalHolders.toLocaleString()
+                        : "Failed to load"}
                     </div>
                   </div>
                 </div>
@@ -498,32 +473,41 @@ export default function TokenDetailsModal({
                   <div>
                     <div className="text-gray-400 text-sm mb-1">Volume</div>
                     <div className="text-white text-base font-medium">
-                      {formatCurrency(analytics.tradeData.volume24h)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">Trades</div>
-                    <div className="text-white text-base font-medium">
-                      {(
-                        analytics.tradeData.buys24h +
-                        analytics.tradeData.sells24h
-                      ).toLocaleString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 text-sm mb-1">Buy Volume</div>
-                    <div className="text-white text-base font-medium">
-                      {formatCurrency(analytics.tradeData.volume24h * 0.45)}{" "}
-                      {/* Estimate 45% buy volume */}
+                      {analytics.tradeData.volume24h > 0
+                        ? formatCurrency(analytics.tradeData.volume24h)
+                        : "Failed to load"}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-400 text-sm mb-1">
-                      Sell Volume
+                      Total Trades
                     </div>
                     <div className="text-white text-base font-medium">
-                      {formatCurrency(analytics.tradeData.volume24h * 0.55)}{" "}
-                      {/* Estimate 55% sell volume */}
+                      {analytics.tradeData.buys24h > 0 ||
+                      analytics.tradeData.sells24h > 0
+                        ? (
+                            analytics.tradeData.buys24h +
+                            analytics.tradeData.sells24h
+                          ).toLocaleString()
+                        : "Failed to load"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 text-sm mb-1">Buys (24h)</div>
+                    <div className="text-white text-base font-medium">
+                      {analytics.tradeData.buys24h > 0
+                        ? analytics.tradeData.buys24h.toLocaleString()
+                        : "Failed to load"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-400 text-sm mb-1">
+                      Sells (24h)
+                    </div>
+                    <div className="text-white text-base font-medium">
+                      {analytics.tradeData.sells24h > 0
+                        ? analytics.tradeData.sells24h.toLocaleString()
+                        : "Failed to load"}
                     </div>
                   </div>
                   <div>
@@ -531,14 +515,17 @@ export default function TokenDetailsModal({
                       Unique Wallets
                     </div>
                     <div className="text-white text-base font-medium">
-                      {Math.max(
-                        Math.floor(
-                          (analytics.tradeData.buys24h +
-                            analytics.tradeData.sells24h) *
-                            0.3
-                        ),
-                        50
-                      ).toLocaleString()}
+                      {analytics.tradeData.buys24h > 0 ||
+                      analytics.tradeData.sells24h > 0
+                        ? Math.max(
+                            Math.floor(
+                              (analytics.tradeData.buys24h +
+                                analytics.tradeData.sells24h) *
+                                0.3
+                            ),
+                            50
+                          ).toLocaleString()
+                        : "Failed to load"}
                     </div>
                   </div>
                   <div>
@@ -546,9 +533,7 @@ export default function TokenDetailsModal({
                       Wallet Change
                     </div>
                     <div className="text-[#35C2E2] text-sm font-medium">
-                      {analytics.isDataAvailable
-                        ? `+${Math.floor(Math.random() * 20 + 5)}`
-                        : "N/A"}
+                      N/A
                     </div>
                   </div>
                 </div>
