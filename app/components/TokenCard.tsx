@@ -74,10 +74,16 @@ function TokenCard({
     // Convert to number and handle all edge cases
     const numValue = Number(valueUsd);
     if (!valueUsd || !isFinite(numValue) || numValue <= 0) return "$0.00";
-    if (numValue < 0.01) return "< $0.01";
+
+    // For very small values, show more precision
+    if (numValue < 0.01) return `$${numValue.toFixed(6)}`;
+    if (numValue < 1) return `$${numValue.toFixed(4)}`;
+    if (numValue < 100) return `$${numValue.toFixed(3)}`;
+
+    // For larger values, show full precision with appropriate decimal places
     return `$${numValue.toLocaleString("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 6,
     })}`;
   }, [valueUsd]);
 

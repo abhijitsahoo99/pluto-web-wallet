@@ -287,9 +287,11 @@ export async function getTokenMetadata(
 }
 
 function isValidMint(mint: string): boolean {
-  // Validate mint address format
+  // Validate mint address format - Solana addresses can be 32-44 characters
   return (
-    (mint.length === 44 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(mint)) ||
+    (mint.length >= 32 &&
+      mint.length <= 44 &&
+      /^[1-9A-HJ-NP-Za-km-z]+$/.test(mint)) ||
     mint === "So11111111111111111111111111111111111111112"
   );
 }

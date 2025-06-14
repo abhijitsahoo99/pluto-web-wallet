@@ -8,10 +8,16 @@ interface NetWorthCardProps {
 function NetWorthCard({ totalValue }: NetWorthCardProps) {
   const formattedValue = useMemo(() => {
     if (totalValue === 0) return "0.00";
-    if (totalValue < 0.01) return "< 0.01";
+
+    // For very small values, show more precision
+    if (totalValue < 0.01) return totalValue.toFixed(6);
+    if (totalValue < 1) return totalValue.toFixed(4);
+    if (totalValue < 100) return totalValue.toFixed(3);
+
+    // For larger values, show appropriate precision
     return totalValue.toLocaleString("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 4,
     });
   }, [totalValue]);
 
