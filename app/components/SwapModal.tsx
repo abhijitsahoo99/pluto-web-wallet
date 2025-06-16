@@ -683,7 +683,7 @@ export default function SwapModal({
             {/* Swap Details */}
             <button
               onClick={() => setIsSwapDetailsOpen(!isSwapDetailsOpen)}
-              className="w-full bg-[#0c1f2d] border border-white/10 rounded-2xl p-2 py-4 flex items-center justify-between hover:bg-[#0c1f2d]/80 transition-colors"
+              className="w-full bg-[#0c1f2d] border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:bg-[#0c1f2d]/80 transition-colors"
             >
               <span className="text-white font-medium text-sm">
                 Swap Details

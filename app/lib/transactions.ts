@@ -257,23 +257,70 @@ async function detectSwapTransaction(
     Array.from(tokenChanges.entries())
   );
 
+  // Collect all significant changes, excluding small SOL fee changes
+  const significantChanges: Array<{
+    mint: string;
+    change: number;
+    isDecrease: boolean;
+  }> = [];
+
   for (const [mint, data] of Array.from(tokenChanges.entries())) {
     console.log(`Token ${mint}: change = ${data.change}`);
-    if (data.change < -0.000001) {
-      // Token decreased (sold)
-      fromToken = mint;
-      fromAmount = Math.abs(data.change);
-      const tokenInfo = await getTokenInfo(mint);
-      fromSymbol = tokenInfo.symbol;
-      console.log(`📤 From token: ${fromAmount} ${fromSymbol} (${mint})`);
-    } else if (data.change > 0.000001) {
-      // Token increased (bought)
-      toToken = mint;
-      toAmount = data.change;
-      const tokenInfo = await getTokenInfo(mint);
-      toSymbol = tokenInfo.symbol;
-      console.log(`📥 To token: ${toAmount} ${toSymbol} (${mint})`);
+
+    // For SOL, ignore small changes that are likely just fees
+    if (mint === "So11111111111111111111111111111111111111112") {
+      // Only consider SOL changes > 0.01 SOL as actual swap amounts
+      if (Math.abs(data.change) > 0.01) {
+        significantChanges.push({
+          mint,
+          change: Math.abs(data.change),
+          isDecrease: data.change < 0,
+        });
+        console.log(`✅ Significant SOL change: ${data.change}`);
+      } else {
+        console.log(
+          `❌ Ignoring small SOL change (likely fee): ${data.change}`
+        );
+      }
+    } else {
+      // For other tokens, any change > 0.000001 is significant
+      if (Math.abs(data.change) > 0.000001) {
+        significantChanges.push({
+          mint,
+          change: Math.abs(data.change),
+          isDecrease: data.change < 0,
+        });
+        console.log(`✅ Significant token change: ${data.change} for ${mint}`);
+      }
     }
+  }
+
+  // Find the largest decrease (from token) and largest increase (to token)
+  const decreases = significantChanges.filter((c) => c.isDecrease);
+  const increases = significantChanges.filter((c) => !c.isDecrease);
+
+  if (decreases.length > 0 && increases.length > 0) {
+    // Get the largest decrease and increase
+    const largestDecrease = decreases.reduce((max, current) =>
+      current.change > max.change ? current : max
+    );
+    const largestIncrease = increases.reduce((max, current) =>
+      current.change > max.change ? current : max
+    );
+
+    // Set from token (sold)
+    fromToken = largestDecrease.mint;
+    fromAmount = largestDecrease.change;
+    const fromTokenInfo = await getTokenInfo(fromToken);
+    fromSymbol = fromTokenInfo.symbol;
+    console.log(`📤 From token: ${fromAmount} ${fromSymbol} (${fromToken})`);
+
+    // Set to token (bought)
+    toToken = largestIncrease.mint;
+    toAmount = largestIncrease.change;
+    const toTokenInfo = await getTokenInfo(toToken);
+    toSymbol = toTokenInfo.symbol;
+    console.log(`📥 To token: ${toAmount} ${toSymbol} (${toToken})`);
   }
 
   // If we found both from and to tokens, it's a swap
