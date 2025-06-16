@@ -1358,6 +1358,7 @@ export default function WalletDashboard({
         isOpen={isTransactionModalOpen}
         onClose={handleTransactionModalClose}
         transaction={selectedTransaction}
+        isDesktopMode={true}
       />
     </>
   );

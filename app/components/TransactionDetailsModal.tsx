@@ -15,12 +15,14 @@ interface TransactionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   transaction: Transaction | null;
+  isDesktopMode?: boolean;
 }
 
 export default function TransactionDetailsModal({
   isOpen,
   onClose,
   transaction,
+  isDesktopMode,
 }: TransactionDetailsModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -106,15 +108,24 @@ export default function TransactionDetailsModal({
     <div
       className={`fixed inset-0 z-50 transition-all duration-300 ${
         isAnimating && isOpen ? "bg-[#051016]" : "bg-transparent"
-      }`}
+      } ${isDesktopMode ? "md:bg-transparent" : ""}`}
       onClick={handleBackdropClick}
     >
       <div
-        className={`fixed bottom-0 left-0 right-0 rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
+        className={`fixed transition-transform duration-300 ease-out border border-white/10 ${
+          isDesktopMode
+            ? `md:right-0 md:bottom-0 md:w-[350px] md:rounded-l-3xl md:rounded-t-none ${
+                isAnimating && isOpen
+                  ? "md:translate-x-0"
+                  : "md:translate-x-full"
+              }`
+            : ""
+        } bottom-0 left-0 right-0 rounded-t-3xl ${
           isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
-        }`}
+        } ${isDesktopMode ? "md:left-auto md:right-0 md:rounded-t-none" : ""}`}
         style={{
-          maxHeight: "80vh",
+          maxHeight: isDesktopMode ? "calc(100vh - 4rem)" : "80vh",
+          backgroundColor: "#0a0f14",
         }}
       >
         {/* Header */}
