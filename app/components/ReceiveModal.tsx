@@ -8,12 +8,14 @@ interface ReceiveModalProps {
   isOpen: boolean;
   onClose: () => void;
   walletAddress: string;
+  isDesktopMode?: boolean;
 }
 
 export default function ReceiveModal({
   isOpen,
   onClose,
   walletAddress,
+  isDesktopMode,
 }: ReceiveModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
@@ -180,110 +182,133 @@ export default function ReceiveModal({
     }
   };
 
-  if (!isOpen && !isAnimating) return null;
+  if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div
-      className={`fixed inset-0 z-50 transition-all duration-300 ${
-        isAnimating && isOpen
-          ? "bg-black/50 backdrop-blur-sm"
-          : "bg-transparent"
+      className={`${
+        isDesktopMode ? "" : "fixed inset-0 z-50 flex items-end justify-center"
       }`}
-      onClick={handleBackdropClick}
     >
-      <div
-        className={`fixed bottom-0 left-0 right-0 bg-[#16303e] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
-          isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
-        }`}
-        style={{
-          maxHeight: "90vh",
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-center p-4 border-b border-white/10 relative">
-          <div className="w-12 bg-white/20 rounded-full absolute" />
-          <h2 className="text-white text-lg font-medium">Receive Funds</h2>
-          <button
-            onClick={handleClose}
-            className="absolute right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
+      {!isDesktopMode && (
         <div
-          className="overflow-y-auto p-4 space-y-6"
-          style={{ maxHeight: "calc(90vh - 120px)" }}
-        >
-          {/* QR Code */}
-          <div className="flex flex-col items-center">
-            <div className="bg-white rounded-2xl p-2 mb-4">
-              {qrCodeUrl ? (
-                <img
-                  src={qrCodeUrl}
-                  alt="Wallet QR Code"
-                  className="w-60 h-60"
-                />
-              ) : (
-                <div className="w-64 h-64 bg-gray-200 rounded-xl flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
-                </div>
-              )}
-            </div>
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={handleClose}
+        />
+      )}
 
-            <p className="text-gray-400 text-xs text-center max-w-xs">
-              Scan this QR code to receive SOL and SPL tokens
-            </p>
+      <div
+        className={`
+        ${
+          isDesktopMode
+            ? "w-full"
+            : `relative w-full max-w-md mx-4 mb-4 transform transition-all duration-300 ease-out ${
+                isAnimating
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-full opacity-0"
+              }`
+        }
+      `}
+      >
+        <div
+          className={`
+          bg-black/90 backdrop-blur-xl border border-white/20 
+          ${isDesktopMode ? "rounded-2xl" : "rounded-3xl"} 
+          overflow-hidden shadow-2xl
+        `}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-xl font-bold text-white">Receive</h2>
+            {!isDesktopMode && (
+              <button
+                onClick={handleClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            )}
           </div>
 
-          {/* Wallet Address */}
-          <div>
-            <label className="block text-white font-normal text-sm mb-2">
-              Wallet Address
-            </label>
-            <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-4">
-              <p className="text-white text-base font-mono text-center">
-                {truncatedAddress}
+          <div
+            className="overflow-y-auto p-3 space-y-4"
+            style={{
+              maxHeight: isDesktopMode ? "500px" : "calc(90vh - 120px)",
+              minHeight: isDesktopMode ? "500px" : "auto",
+            }}
+          >
+            {/* QR Code */}
+            <div className="flex flex-col items-center">
+              <div className="bg-white rounded-2xl p-2 mb-3">
+                {qrCodeUrl ? (
+                  <img
+                    src={qrCodeUrl}
+                    alt="Wallet QR Code"
+                    className="w-52 h-52"
+                  />
+                ) : (
+                  <div className="w-52 h-52 bg-gray-200 rounded-xl flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-gray-400 text-xs text-center max-w-xs">
+                Scan this QR code to receive SOL and SPL tokens
               </p>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4">
-            <button
-              onClick={handleCopy}
-              className={`flex-1 py-3 rounded-2xl font-normal transition-all text-sm flex items-center justify-center gap-2 ${
-                copySuccess
-                  ? "bg-green-500 text-white"
-                  : "bg-[#0c1f2d] text-white hover:bg-[#0c1f2d]/80"
-              }`}
-            >
-              <Copy size={16} />
-              {copySuccess ? "Copied!" : "Copy"}
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex-1 py-3 bg-[#35C2E2] text-white rounded-2xl font-normal hover:bg-[#35C2E2]/90 transition-colors text-sm flex items-center justify-center gap-2"
-            >
-              <Share size={16} />
-              Share
-            </button>
-          </div>
-
-          {/* Security Notice */}
-          <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-4 flex items-center justify-center gap-3">
-            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <Check size={12} className="text-white" />
+            {/* Wallet Address */}
+            <div>
+              <label className="block text-white font-normal text-sm mb-1">
+                Wallet Address
+              </label>
+              <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-3">
+                <p className="text-white text-base font-mono text-center">
+                  {truncatedAddress}
+                </p>
+              </div>
             </div>
-            <p className="text-gray-400 text-xs">
-              Only share this address with trusted sources
-            </p>
-          </div>
 
-          {/* Bottom Padding */}
-          <div className="h-2" />
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={handleCopy}
+                className={`flex-1 py-2.5 rounded-2xl font-normal transition-all text-sm flex items-center justify-center gap-2 ${
+                  copySuccess
+                    ? "bg-green-500 text-white"
+                    : "bg-[#0c1f2d] text-white hover:bg-[#0c1f2d]/80"
+                }`}
+              >
+                <Copy size={16} />
+                {copySuccess ? "Copied!" : "Copy"}
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex-1 py-2.5 bg-[#35C2E2] text-white rounded-2xl font-normal hover:bg-[#35C2E2]/90 transition-colors text-sm flex items-center justify-center gap-2"
+              >
+                <Share size={16} />
+                Share
+              </button>
+            </div>
+
+            {/* Security Notice */}
+            <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-3 flex items-center justify-center gap-3">
+              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Check size={12} className="text-white" />
+              </div>
+              <p className="text-gray-400 text-xs">
+                Only share this address with trusted sources
+              </p>
+            </div>
+
+            {/* Bottom Padding */}
+            <div className="h-1" />
+          </div>
         </div>
       </div>
     </div>
   );
+
+  return modalContent;
 }

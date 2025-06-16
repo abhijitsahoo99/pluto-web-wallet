@@ -47,17 +47,17 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - Hide on desktop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar - Mobile optimized width */}
+      {/* Sidebar - Mobile optimized width - Hide on desktop */}
       <div
-        className={`fixed top-0 left-0 h-full w-[60%] max-w-[320px] min-w-[280px] bg-[#1a1d29] z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-[60%] max-w-[320px] min-w-[280px] bg-[#1a1d29] z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

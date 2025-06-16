@@ -27,6 +27,7 @@ interface SendModalProps {
   tokens: TokenHolding[];
   walletAddress: string;
   recipientAddress?: string;
+  isDesktopMode?: boolean;
 }
 
 interface SelectedToken {
@@ -46,6 +47,7 @@ interface TokenSelectorProps {
   onSelectToken: (token: SelectedToken) => void;
   solBalance: number;
   tokens: TokenHolding[];
+  title: string;
 }
 
 const TokenSelector = ({
@@ -55,6 +57,7 @@ const TokenSelector = ({
   onSelectToken,
   solBalance,
   tokens,
+  title,
 }: TokenSelectorProps) => {
   if (!isOpen) return null;
 
@@ -79,7 +82,7 @@ const TokenSelector = ({
       >
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between">
-            <h3 className="text-white text-lg font-medium">Select Token</h3>
+            <h3 className="text-white text-lg font-medium">{title}</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors"
@@ -176,17 +179,17 @@ const TokenSelector = ({
 
 // Success/Error Animation Component
 const TransactionStatus = ({
-  isVisible,
-  isSuccess,
-  message,
+  isOpen,
+  status,
+  signature,
   onClose,
 }: {
-  isVisible: boolean;
-  isSuccess: boolean;
-  message: string;
+  isOpen: boolean;
+  status: boolean;
+  signature: string;
   onClose: () => void;
 }) => {
-  if (!isVisible) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center">
@@ -208,19 +211,19 @@ const TransactionStatus = ({
         <div className="flex flex-col items-center text-center">
           <div
             className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-              isSuccess ? "bg-green-500" : "bg-red-500"
+              status ? "bg-green-500" : "bg-red-500"
             }`}
           >
-            {isSuccess ? (
+            {status ? (
               <Check size={28} className="text-white" />
             ) : (
               <X size={28} className="text-white" />
             )}
           </div>
           <h3 className="text-white text-base font-medium mb-2">
-            {isSuccess ? "Transaction Successful" : "Transaction Failed"}
+            {status ? "Transaction Successful" : "Transaction Failed"}
           </h3>
-          <p className="text-gray-400 text-xs">{message}</p>
+          <p className="text-gray-400 text-xs">{signature}</p>
         </div>
       </div>
     </div>
@@ -235,6 +238,7 @@ export default function SendModal({
   tokens,
   walletAddress,
   recipientAddress: initialRecipientAddress = "",
+  isDesktopMode,
 }: SendModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedToken, setSelectedToken] = useState<SelectedToken>({
@@ -253,7 +257,8 @@ export default function SendModal({
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [showStatus, setShowStatus] = useState(false);
-  const [transactionSuccess, setTransactionSuccess] = useState(false);
+  const [transactionStatus, setTransactionStatus] = useState(false);
+  const [transactionSignature, setTransactionSignature] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [pasteSuccess, setPasteSuccess] = useState(false);
 
@@ -496,11 +501,12 @@ export default function SendModal({
       console.log("Transaction confirmed!");
 
       setIsSending(false);
-      setTransactionSuccess(true);
+      setTransactionStatus(true);
+      setTransactionSignature(txSignature);
       setStatusMessage(
         `Successfully sent ${amount} ${
           selectedToken.symbol
-        } to ${recipientAddress.slice(0, 8)}...${recipientAddress.slice(-8)}`
+        } to ${recipientAddress.slice(0, 6)}...${recipientAddress.slice(-4)}`
       );
       setShowStatus(true);
 
@@ -517,7 +523,8 @@ export default function SendModal({
     } catch (error) {
       console.error("Send failed:", error);
       setIsSending(false);
-      setTransactionSuccess(false);
+      setTransactionStatus(false);
+      setTransactionSignature("");
       setStatusMessage(
         error instanceof Error ? error.message : "Transaction failed"
       );
@@ -525,43 +532,60 @@ export default function SendModal({
     }
   };
 
-  if (!isOpen && !isAnimating) return null;
+  if (!isOpen) return null;
 
-  return (
-    <>
+  const modalContent = (
+    <div
+      className={`${
+        isDesktopMode ? "" : "fixed inset-0 z-50 flex items-end justify-center"
+      }`}
+    >
+      {!isDesktopMode && (
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={handleClose}
+        />
+      )}
+
       <div
-        className={`fixed inset-0 z-50 transition-all duration-300 ${
-          isAnimating && isOpen
-            ? "bg-black/50 backdrop-blur-sm"
-            : "bg-transparent"
-        }`}
-        onClick={handleBackdropClick}
+        className={`
+        ${
+          isDesktopMode
+            ? "w-full"
+            : `relative w-full max-w-md mx-4 mb-4 transform transition-all duration-300 ease-out ${
+                isAnimating
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-full opacity-0"
+              }`
+        }
+      `}
       >
         <div
-          className={`fixed bottom-0 left-0 right-0 bg-[#16303e] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
-            isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
-          }`}
-          style={{
-            maxHeight: "90vh",
-          }}
+          className={`
+          bg-black/90 backdrop-blur-xl border border-white/20 
+          ${isDesktopMode ? "rounded-2xl" : "rounded-3xl"} 
+          overflow-hidden shadow-2xl
+        `}
         >
           {/* Header */}
-          <div className="flex items-center justify-center p-4 border-b border-white/10 relative">
-            <div className="w-12 bg-white/20 rounded-full absolute " />
-            <h2 className="text-white text-lg font-medium">
-              Send {selectedToken.symbol}
-            </h2>
-            <button
-              onClick={handleClose}
-              className="absolute right-6 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-            >
-              <X size={18} />
-            </button>
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-xl font-bold text-white">Send</h2>
+            {!isDesktopMode && (
+              <button
+                onClick={handleClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            )}
           </div>
 
           <div
             className="overflow-y-auto p-6 space-y-4"
-            style={{ maxHeight: "calc(90vh - 120px)" }}
+            style={{
+              maxHeight: isDesktopMode ? "500px" : "calc(90vh - 120px)",
+              minHeight: isDesktopMode ? "500px" : "auto",
+            }}
           >
             {/* Selected Token */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
@@ -714,8 +738,14 @@ export default function SendModal({
           </div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Token Selector Modal */}
+  return (
+    <>
+      {modalContent}
+
+      {/* Token Selector */}
       <TokenSelector
         isOpen={isTokenSelectorOpen}
         onClose={() => setIsTokenSelectorOpen(false)}
@@ -723,13 +753,14 @@ export default function SendModal({
         onSelectToken={setSelectedToken}
         solBalance={solBalance}
         tokens={tokens}
+        title="Select token to send"
       />
 
-      {/* Transaction Status Modal */}
+      {/* Transaction Status */}
       <TransactionStatus
-        isVisible={showStatus}
-        isSuccess={transactionSuccess}
-        message={statusMessage}
+        isOpen={showStatus}
+        status={transactionStatus}
+        signature={transactionStatus ? transactionSignature : statusMessage}
         onClose={() => setShowStatus(false)}
       />
     </>

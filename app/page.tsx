@@ -164,8 +164,8 @@ export default function Home() {
       className="min-h-screen w-full bg-cover bg-center flex flex-col"
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
-      {/* Minimal Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-4">
+      {/* Minimal Navbar - Hide on desktop */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-4 md:hidden">
         {/* Wallet Icon (left) */}
         <button
           className="w-10 h-10 bg-[#35C2E2] rounded-full flex items-center justify-center"

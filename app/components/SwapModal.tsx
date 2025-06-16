@@ -14,6 +14,7 @@ interface SwapModalProps {
   tokens: TokenHolding[];
   walletAddress: string;
   defaultFromToken?: string;
+  isDesktopMode?: boolean;
 }
 
 interface SwapToken {
@@ -166,6 +167,7 @@ export default function SwapModal({
   tokens,
   walletAddress,
   defaultFromToken,
+  isDesktopMode,
 }: SwapModalProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [fromToken, setFromToken] = useState<SwapToken>({
@@ -515,48 +517,66 @@ export default function SwapModal({
     );
   }, [amount, fromToken.balance, swapQuote, isSwapping]);
 
-  if (!isOpen && !isAnimating) return null;
+  if (!isOpen) return null;
 
-  return (
-    <>
+  const modalContent = (
+    <div
+      className={`${
+        isDesktopMode ? "" : "fixed inset-0 z-50 flex items-end justify-center"
+      }`}
+    >
+      {!isDesktopMode && (
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={handleClose}
+        />
+      )}
+
       <div
-        className={`fixed inset-0 z-50 transition-all duration-300 ${
-          isAnimating && isOpen
-            ? "bg-black/50 backdrop-blur-sm"
-            : "bg-transparent"
-        }`}
-        onClick={handleBackdropClick}
+        className={`
+        ${
+          isDesktopMode
+            ? "w-full"
+            : `relative w-full max-w-md mx-4 mb-4 transform transition-all duration-300 ease-out ${
+                isAnimating
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-full opacity-0"
+              }`
+        }
+      `}
       >
         <div
-          className={`fixed bottom-0 left-0 right-0 bg-[#0D0F1C] rounded-t-3xl transition-transform duration-300 ease-out border border-white/10 ${
-            isAnimating && isOpen ? "translate-y-0" : "translate-y-full"
-          }`}
-          style={{
-            maxHeight: "95vh",
-          }}
+          className={`
+          bg-black/90 backdrop-blur-xl border border-white/20 
+          ${isDesktopMode ? "rounded-2xl" : "rounded-3xl"} 
+          overflow-hidden shadow-2xl
+        `}
         >
           {/* Header */}
-          <div className="flex items-center p-4 border-b border-white/10 relative">
-            <h2 className="text-white text-lg font-medium absolute left-1/2 transform -translate-x-1/2">
-              Swap
-            </h2>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-white transition-colors ml-auto"
-            >
-              <X size={24} />
-            </button>
+          <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <h2 className="text-xl font-bold text-white">Swap</h2>
+            {!isDesktopMode && (
+              <button
+                onClick={handleClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            )}
           </div>
 
           <div
-            className="overflow-y-auto p-4 space-y-3"
-            style={{ maxHeight: "calc(95vh - 120px)" }}
+            className="overflow-y-auto p-3 space-y-2"
+            style={{
+              maxHeight: isDesktopMode ? "500px" : "calc(95vh - 120px)",
+              minHeight: isDesktopMode ? "500px" : "auto",
+            }}
           >
             {/* Swap Cards Container */}
-            <div className="bg-[#0C1F2D] rounded-2xl p-3 border border-white/10">
+            <div className="bg-[#0C1F2D] rounded-2xl p-2 border border-white/10">
               <div className="relative">
                 {/* You Pay Card */}
-                <div className="bg-[#16303e] border border-white/10 rounded-xl p-3 mb-4">
+                <div className="bg-[#16303e] border border-white/10 rounded-xl p-2 mb-3">
                   <div className="flex items-center justify-between">
                     {/* Left side - Token info */}
                     <button
@@ -603,7 +623,7 @@ export default function SwapModal({
                 </div>
 
                 {/* Swap Button - Positioned to overlap both cards */}
-                <div className="flex justify-center relative z-10 -my-4">
+                <div className="flex justify-center relative z-10 -my-3">
                   <button
                     onClick={handleSwapTokens}
                     className="w-8 h-8 bg-gray-800 border-2 border-gray-600 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors shadow-lg"
@@ -613,7 +633,7 @@ export default function SwapModal({
                 </div>
 
                 {/* You Receive Card */}
-                <div className="bg-[#16303e] border border-white/10 rounded-xl p-3">
+                <div className="bg-[#16303e] border border-white/10 rounded-xl p-2">
                   <div className="flex items-center justify-between">
                     {/* Left side - Token info */}
                     <button
@@ -663,7 +683,7 @@ export default function SwapModal({
             {/* Swap Details */}
             <button
               onClick={() => setIsSwapDetailsOpen(!isSwapDetailsOpen)}
-              className="w-full bg-[#0c1f2d] border border-white/10 rounded-2xl p-3 flex items-center justify-between hover:bg-[#0c1f2d]/80 transition-colors"
+              className="w-full bg-[#0c1f2d] border border-white/10 rounded-2xl p-2 py-4 flex items-center justify-between hover:bg-[#0c1f2d]/80 transition-colors"
             >
               <span className="text-white font-medium text-sm">
                 Swap Details
@@ -677,7 +697,7 @@ export default function SwapModal({
             </button>
 
             {isSwapDetailsOpen && (
-              <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-3 space-y-2">
+              <div className="bg-[#0c1f2d] border border-white/10 rounded-2xl p-2 space-y-1">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-400">Rate</span>
                   <span className="text-white">
@@ -769,87 +789,155 @@ export default function SwapModal({
             )}
 
             {/* Swap Button */}
-            <button
-              onClick={handleSwap}
-              disabled={!canSwap}
-              className={`w-full py-3 rounded-2xl font-medium text-base transition-all ${
-                canSwap
-                  ? "bg-gray-300 text-black hover:bg-gray-200"
-                  : "bg-gray-600 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              {isSwapping ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                  Swapping...
+            <div className="space-y-3">
+              {/* Amount Input - Desktop Only */}
+              {isDesktopMode && (
+                <div>
+                  <label className="block text-gray-400 text-sm mb-2">
+                    Enter Amount
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                        setAmount(value);
+                      }
+                    }}
+                    placeholder="0.0"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-[#35C2E2] transition-colors text-center text-lg font-medium"
+                  />
                 </div>
-              ) : (
-                "Swap"
               )}
-            </button>
 
-            {/* Numeric Keypad */}
-            <div className="grid grid-cols-4 gap-2 mt-4">
-              {/* Left Column - Special Buttons */}
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleNumberInput("MAX")}
-                  className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
-                >
-                  MAX
-                </button>
-                <button
-                  onClick={() => handleNumberInput("75%")}
-                  className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
-                >
-                  75%
-                </button>
-                <button
-                  onClick={() => handleNumberInput("50%")}
-                  className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
-                >
-                  50%
-                </button>
-                <button
-                  onClick={() => handleNumberInput("CLR")}
-                  className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
-                >
-                  CLR
-                </button>
-              </div>
-
-              {/* Numbers Grid */}
-              <div className="col-span-3 grid grid-cols-3 gap-2">
-                {[
-                  "1",
-                  "2",
-                  "3",
-                  "4",
-                  "5",
-                  "6",
-                  "7",
-                  "8",
-                  "9",
-                  ".",
-                  "0",
-                  "⌫",
-                ].map((key) => (
+              {/* Percentage Buttons Row - Desktop Only */}
+              {isDesktopMode && (
+                <div className="flex gap-2">
                   <button
-                    key={key}
-                    onClick={() => handleNumberInput(key)}
-                    className="h-10 bg-transparent text-white text-lg font-normal hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center"
+                    onClick={() =>
+                      setAmount((fromToken.balance * 0.25).toString())
+                    }
+                    className="flex-1 py-1.5 bg-transparent border border-[#35C2E2]/50 text-[#35C2E2] rounded-xl font-medium text-sm hover:bg-[#35C2E2]/10 transition-colors"
                   >
-                    {key}
+                    25%
                   </button>
-                ))}
-              </div>
+                  <button
+                    onClick={() =>
+                      setAmount((fromToken.balance * 0.5).toString())
+                    }
+                    className="flex-1 py-1.5 bg-transparent border border-[#35C2E2]/50 text-[#35C2E2] rounded-xl font-medium text-sm hover:bg-[#35C2E2]/10 transition-colors"
+                  >
+                    50%
+                  </button>
+                  <button
+                    onClick={() =>
+                      setAmount((fromToken.balance * 0.75).toString())
+                    }
+                    className="flex-1 py-1.5 bg-transparent border border-[#35C2E2]/50 text-[#35C2E2] rounded-xl font-medium text-sm hover:bg-[#35C2E2]/10 transition-colors"
+                  >
+                    75%
+                  </button>
+                  <button
+                    onClick={() => setAmount(fromToken.balance.toString())}
+                    className="flex-1 py-1.5 bg-transparent border border-[#35C2E2]/50 text-[#35C2E2] rounded-xl font-medium text-sm hover:bg-[#35C2E2]/10 transition-colors"
+                  >
+                    MAX
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={handleSwap}
+                disabled={!canSwap}
+                className={`w-full py-2.5 rounded-2xl font-medium text-base transition-all ${
+                  canSwap
+                    ? "bg-gray-300 text-black hover:bg-gray-200"
+                    : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                {isSwapping ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                    Swapping...
+                  </div>
+                ) : (
+                  "Swap"
+                )}
+              </button>
             </div>
 
+            {/* Numeric Keypad - Mobile Only */}
+            {!isDesktopMode && (
+              <div className="grid grid-cols-4 gap-2 mt-3">
+                {/* Left Column - Special Buttons */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleNumberInput("MAX")}
+                    className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
+                  >
+                    MAX
+                  </button>
+                  <button
+                    onClick={() => handleNumberInput("75%")}
+                    className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
+                  >
+                    75%
+                  </button>
+                  <button
+                    onClick={() => handleNumberInput("50%")}
+                    className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
+                  >
+                    50%
+                  </button>
+                  <button
+                    onClick={() => handleNumberInput("CLR")}
+                    className="w-full h-10 bg-transparent border-2 border-cyan-400 text-cyan-400 rounded-xl font-medium text-xs hover:bg-cyan-400/10 transition-colors"
+                  >
+                    CLR
+                  </button>
+                </div>
+
+                {/* Numbers Grid */}
+                <div className="col-span-3 grid grid-cols-3 gap-2">
+                  {[
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    ".",
+                    "0",
+                    "⌫",
+                  ].map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handleNumberInput(key)}
+                      className="h-10 bg-transparent text-white text-lg font-normal hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center"
+                    >
+                      {key}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Bottom Padding */}
-            <div className="h-2" />
+            <div className="h-1" />
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {modalContent}
 
       {/* Token Selectors */}
       <TokenSelector
