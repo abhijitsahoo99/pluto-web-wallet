@@ -114,7 +114,7 @@ export default function TransactionDetailsModal({
       <div
         className={`fixed transition-transform duration-300 ease-out border border-white/10 ${
           isDesktopMode
-            ? `md:right-0 md:bottom-0 md:w-[350px] md:rounded-l-3xl md:rounded-t-none ${
+            ? `md:top-16 md:right-0 md:bottom-0 md:w-[350px] md:rounded-l-3xl md:rounded-t-none ${
                 isAnimating && isOpen
                   ? "md:translate-x-0"
                   : "md:translate-x-full"

@@ -239,8 +239,9 @@ export default function WalletDashboard({
   // Handle swap from token details
   const handleSwapFromTokenDetails = useCallback((fromToken: string) => {
     setSwapFromToken(fromToken);
-    setIsSwapModalOpen(true);
-    setIsTokenDetailsOpen(false);
+    setActiveDesktopTab("swap"); // Switch to swap tab in desktop
+    setIsTokenDetailsOpen(false); // Close token details modal
+    // Don't open mobile swap modal - use desktop interface instead
   }, []);
 
   // Handle swap modal close
@@ -855,7 +856,8 @@ export default function WalletDashboard({
                   Terms of Use
                 </button>
 
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-200/30 bg-white/10 backdrop-blur-md shadow-lg text-red-400 font-semibold text-base w-full">
+                {/* Logout Button - Mobile Style */}
+                <button className="w-full bg-red-500/10 border border-red-500/30 text-red-400 py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 mb-5 transition-colors hover:bg-red-500/20">
                   <svg
                     width="16"
                     height="16"
@@ -891,130 +893,143 @@ export default function WalletDashboard({
                   Logout
                 </button>
 
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-200/30 bg-white/10 backdrop-blur-md shadow-lg text-white font-semibold text-base w-full">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="text-current"
-                  >
-                    <path
-                      d="M9 12l2 2 4-4"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Rate Us
-                </button>
+                {/* Action Buttons - Mobile Style */}
+                <div className="flex gap-2 mb-5">
+                  <button className="flex-1 bg-[#35C2E2] text-white py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-1.5 transition-colors hover:bg-[#35C2E2]/90">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-current"
+                    >
+                      <path
+                        d="M9 12l2 2 4-4"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    Rate Us
+                  </button>
+                  <button className="flex-1 bg-[#2a2f3f] text-white py-2.5 px-3 rounded-xl font-medium text-sm flex items-center justify-center gap-1.5 border border-gray-600/30 transition-colors hover:bg-[#2a2f3f]/80">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="text-current"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      />
+                      <path
+                        d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M12 17h.01"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    Get Help
+                  </button>
+                </div>
 
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-200/30 bg-white/10 backdrop-blur-md shadow-lg text-white font-semibold text-base w-full">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="text-current"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M12 17h.01"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  Get Help
-                </button>
-
-                {/* Social Icons - Same as Mobile */}
-                <div className="flex flex-col gap-3 pt-4">
+                {/* Social Icons - Mobile Style */}
+                <div className="flex justify-center gap-6">
                   <a
                     href="https://x.com/solanaappkit"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-200/30 bg-white/10 backdrop-blur-md shadow-lg text-white font-semibold text-base"
+                    aria-label="Twitter"
+                    className="w-8 h-8 flex items-center justify-center text-[#35C2E2] hover:text-[#35C2E2]/80 transition-colors"
                   >
-                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                      <path
-                        d="M4 4L14 14M14 4L4 14"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                     </svg>
-                    Twitter
                   </a>
                   <a
                     href="https://t.me/solanaappkit"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-200/30 bg-white/10 backdrop-blur-md shadow-lg text-white font-semibold text-base"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                      <path
-                        d="M15.5 3.5L2.5 8.5L7.5 10.5M15.5 3.5L7.5 10.5M15.5 3.5L12.5 15.5L7.5 10.5"
-                        stroke="white"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    Telegram
-                  </a>
-                  <a
-                    href="https://docs.solanaappkit.com/docs/introduction"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-200/30 bg-white/10 backdrop-blur-md shadow-lg text-white font-semibold text-base"
+                    aria-label="Telegram"
+                    className="w-8 h-8 flex items-center justify-center text-[#35C2E2] hover:text-[#35C2E2]/80 transition-colors"
                   >
                     <svg
-                      className="ml-2"
-                      width="16"
-                      height="16"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.306.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                    </svg>
+                  </a>
+                  <a
+                    href="https://www.solanaappkit.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Website"
+                    className="w-8 h-8 flex items-center justify-center text-[#35C2E2] hover:text-[#35C2E2]/80 transition-colors"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{ transform: "rotate(-45deg)" }}
+                      className="text-current"
                     >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="2"
+                        y1="12"
+                        x2="22"
+                        y2="12"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      />
                       <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
+                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                        stroke="currentColor"
+                        strokeWidth="2"
                       />
                     </svg>
-                    Docs
                   </a>
                 </div>
               </div>
